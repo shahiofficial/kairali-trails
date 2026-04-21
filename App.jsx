@@ -306,7 +306,7 @@ function CurrencyInp({label,valueINR,onChange,countryId,fxRates,placeholder}){
     </div>
   );
 }
-const KT_LOGO_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2310.PNG";
+const KT_LOGO_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2310.jpg";
 const KT_LOGO_DARK_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2309.PNG";
 function KTLogoLight({h=48}){
   const w=Math.round(h*2.38);
