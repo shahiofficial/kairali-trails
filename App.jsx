@@ -254,7 +254,7 @@ function Shell({children,user,onLogout,fxRates,rateError,subtitle,onBack}){
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             {onBack&&<button onClick={onBack} style={{background:B.tealLight,border:"none",color:B.teal,fontSize:22,cursor:"pointer",padding:"6px 10px",borderRadius:9,fontWeight:700,flexShrink:0,lineHeight:1}}>‹</button>}
             <div>
-              <KTLogoLight h={44}/>
+              <KTLogoLight h={52}/>
               {subtitle&&<div style={{fontSize:9,color:B.textLight,marginTop:2,fontWeight:600,letterSpacing:1}}>{subtitle}</div>}
             </div>
           </div>
@@ -306,7 +306,7 @@ function CurrencyInp({label,valueINR,onChange,countryId,fxRates,placeholder}){
     </div>
   );
 }
-const KT_LOGO_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2310.jpg";
+const KT_LOGO_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2310.PNG";
 const KT_LOGO_DARK_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2309.PNG";
 function KTLogoLight({h=48}){
   const w=Math.round(h*2.38);
