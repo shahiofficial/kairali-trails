@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 // ── SUPABASE CLIENT ───────────────────────────────────────────────────────────
+// v2-activity-grid
 const SUPA_URL="https://aapbbeqwnnhmhedsgryt.supabase.co";
 const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcGJiZXF3bm5obWhlZHNncnl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzU3ODAsImV4cCI6MjA5MjI1MTc4MH0.bBdSvBdXeC_hqmE9syeeFYzmIHCVZlHUsh4_RX6zNH8";
 async function sbFetch(path,opts={}){
@@ -2229,5 +2230,3 @@ function InclExclEditor({form, setForm}){
     </div>
   );
 }
-
-
