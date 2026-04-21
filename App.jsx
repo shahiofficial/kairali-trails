@@ -254,7 +254,7 @@ function Shell({children,user,onLogout,fxRates,rateError,subtitle,onBack}){
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             {onBack&&<button onClick={onBack} style={{background:B.tealLight,border:"none",color:B.teal,fontSize:22,cursor:"pointer",padding:"6px 10px",borderRadius:9,fontWeight:700,flexShrink:0,lineHeight:1}}>‹</button>}
             <div>
-              <KTLogoLight h={52}/>
+              <KTLogoLight h={44}/>
               {subtitle&&<div style={{fontSize:9,color:B.textLight,marginTop:2,fontWeight:600,letterSpacing:1}}>{subtitle}</div>}
             </div>
           </div>
@@ -306,13 +306,13 @@ function CurrencyInp({label,valueINR,onChange,countryId,fxRates,placeholder}){
     </div>
   );
 }
-const KT_LOGO_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2310.PNG";
-const KT_LOGO_DARK_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2309.PNG";
-function KTLogoLight({h=68}){
+const KT_LOGO_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2310.jpg";
+const KT_LOGO_DARK_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2309.jpg";
+function KTLogoLight({h=48}){
   const w=Math.round(h*2.38);
   return <img src={KT_LOGO_SRC} alt="Kairali Trails" style={{height:h,width:w,objectFit:"contain",display:"block"}}/>;
 }
-function KTLogoDark({h=68}){
+function KTLogoDark({h=56}){
   const w=Math.round(h*2.38);
   return <img src={KT_LOGO_DARK_SRC} alt="Kairali Trails" style={{height:h,width:w,objectFit:"contain",display:"block"}}/>;
 }
@@ -323,14 +323,14 @@ function Login({onLogin}){
   return(
     <div style={{minHeight:"100vh",background:B.white,fontFamily:"'Poppins',sans-serif",maxWidth:393,margin:"0 auto",display:"flex",flexDirection:"column"}}>
       <style>{css}</style>
-      <div style={{background:`linear-gradient(135deg,${B.teal},${B.blue})`,padding:"48px 28px 48px 32px",position:"relative",overflow:"hidden",flexShrink:0}}>
+      <div style={{background:`linear-gradient(135deg,${B.teal},${B.blue})`,padding:"32px 28px 32px 28px",position:"relative",overflow:"hidden",flexShrink:0}}>
         <div style={{position:"absolute",top:-30,right:-30,width:130,height:130,borderRadius:"50%",background:B.mint,opacity:.17}}/>
         <div style={{position:"absolute",bottom:-20,left:10,width:80,height:80,borderRadius:"50%",background:B.cyan,opacity:.14}}/>
-        <div style={{position:"relative"}}>
-          <div style={{marginBottom:20,paddingLeft:4}}>
-            <KTLogoDark h={72}/>
+        <div style={{position:"relative",display:"flex",flexDirection:"column",alignItems:"flex-start",gap:0}}>
+          <div style={{marginBottom:12}}>
+            <KTLogoDark h={52}/>
           </div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:22,color:"rgba(255,255,255,0.95)",fontWeight:700,lineHeight:1.3,paddingLeft:4}}>Customisation System</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:22,color:"rgba(255,255,255,0.95)",fontWeight:700,lineHeight:1.3}}>Customisation System</div>
           <div style={{width:40,height:3,background:B.mint,borderRadius:2,marginTop:13}}/>
         </div>
       </div>
@@ -1545,7 +1545,7 @@ function ItineraryPage({quote,onBack}){
           ))}
         </div>
         <div style={{display:"flex",gap:12,alignItems:"center",marginTop:12,padding:"12px",borderRadius:10,background:IT.tealLight}}>
-          <div style={{width:40,height:40,borderRadius:20,background:IT.teal,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><KTLogoDark h={50}/></div>
+          <div style={{width:40,height:40,borderRadius:20,background:IT.teal,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><KTLogoDark h={40}/></div>
           <div><div style={{fontSize:13,fontWeight:600}}>Kairali Trails</div><div style={{fontSize:11,color:IT.muted}}>Your dedicated travel partner</div><div style={{fontSize:11,color:IT.teal,fontWeight:600,marginTop:2}}>📞 +91 800 800 4016</div></div>
         </div>
       </div>
