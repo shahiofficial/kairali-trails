@@ -249,12 +249,12 @@ function Shell({children,user,onLogout,fxRates,rateError,subtitle,onBack}){
     <div style={{minHeight:"100vh",background:B.bg,fontFamily:"'Poppins',sans-serif",color:B.text,maxWidth:393,margin:"0 auto",display:"flex",flexDirection:"column"}}>
       <style>{css}</style>
       <div style={{height:"max(50px,env(safe-area-inset-top,50px))",background:B.white,flexShrink:0}}/>
-      <div style={{background:B.white,padding:"6px 14px 10px",flexShrink:0,borderBottom:`2px solid ${B.tealLight}`,boxShadow:"0 2px 10px #0496a510"}}>
+      <div style={{background:B.white,padding:"8px 16px 8px 16px",flexShrink:0,borderBottom:`2px solid ${B.tealLight}`,boxShadow:"0 2px 8px rgba(4,150,165,0.08)"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",minHeight:52}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             {onBack&&<button onClick={onBack} style={{background:B.tealLight,border:"none",color:B.teal,fontSize:22,cursor:"pointer",padding:"6px 10px",borderRadius:9,fontWeight:700,flexShrink:0,lineHeight:1}}>‹</button>}
             <div>
-              <KTLogoLight h={80}/>
+              <KTLogoLight h={52}/>
               {subtitle&&<div style={{fontSize:9,color:B.textLight,marginTop:2,fontWeight:600,letterSpacing:1}}>{subtitle}</div>}
             </div>
           </div>
@@ -323,14 +323,14 @@ function Login({onLogin}){
   return(
     <div style={{minHeight:"100vh",background:B.white,fontFamily:"'Poppins',sans-serif",maxWidth:393,margin:"0 auto",display:"flex",flexDirection:"column"}}>
       <style>{css}</style>
-      <div style={{background:`linear-gradient(135deg,${B.teal},${B.blue})`,padding:"40px 28px 48px",position:"relative",overflow:"hidden",flexShrink:0}}>
+      <div style={{background:`linear-gradient(135deg,${B.teal},${B.blue})`,padding:"48px 28px 48px 32px",position:"relative",overflow:"hidden",flexShrink:0}}>
         <div style={{position:"absolute",top:-30,right:-30,width:130,height:130,borderRadius:"50%",background:B.mint,opacity:.17}}/>
         <div style={{position:"absolute",bottom:-20,left:10,width:80,height:80,borderRadius:"50%",background:B.cyan,opacity:.14}}/>
         <div style={{position:"relative"}}>
-          <div style={{marginBottom:24}}>
-            <KTLogoDark h={80}/>
+          <div style={{marginBottom:20,paddingLeft:4}}>
+            <KTLogoDark h={72}/>
           </div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:22,color:"rgba(255,255,255,0.92)",lineHeight:1.3}}>Customisation<br/>System</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:22,color:"rgba(255,255,255,0.95)",fontWeight:700,lineHeight:1.3,paddingLeft:4}}>Customisation System</div>
           <div style={{width:40,height:3,background:B.mint,borderRadius:2,marginTop:13}}/>
         </div>
       </div>
