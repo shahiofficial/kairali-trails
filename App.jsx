@@ -254,7 +254,7 @@ function Shell({children,user,onLogout,fxRates,rateError,subtitle,onBack}){
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             {onBack&&<button onClick={onBack} style={{background:B.tealLight,border:"none",color:B.teal,fontSize:22,cursor:"pointer",padding:"6px 10px",borderRadius:9,fontWeight:700,flexShrink:0,lineHeight:1}}>‹</button>}
             <div>
-              <KTLogoLight h={44}/>
+              <KTLogoLight h={180}/>
               {subtitle&&<div style={{fontSize:9,color:B.textLight,marginTop:2,fontWeight:600,letterSpacing:1}}>{subtitle}</div>}
             </div>
           </div>
@@ -308,11 +308,13 @@ function CurrencyInp({label,valueINR,onChange,countryId,fxRates,placeholder}){
 }
 const KT_LOGO_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2310.PNG";
 const KT_LOGO_DARK_SRC="https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2309.PNG";
-function KTLogoLight({h=44}){
-  return <img src={KT_LOGO_SRC} alt="Kairali Trails" style={{height:h,width:"auto",maxWidth:180,objectFit:"contain",display:"block"}}/>;
+function KTLogoLight({h=160}){
+  const w=Math.round(h*2.38);
+  return <img src={KT_LOGO_SRC} alt="Kairali Trails" style={{height:h,width:w,objectFit:"contain",display:"block"}}/>;
 }
-function KTLogoDark({h=44}){
-  return <img src={KT_LOGO_DARK_SRC} alt="Kairali Trails" style={{height:h,width:"auto",maxWidth:180,objectFit:"contain",display:"block"}}/>;
+function KTLogoDark({h=160}){
+  const w=Math.round(h*2.38);
+  return <img src={KT_LOGO_DARK_SRC} alt="Kairali Trails" style={{height:h,width:w,objectFit:"contain",display:"block"}}/>;
 }
 
 function Login({onLogin}){
@@ -326,7 +328,7 @@ function Login({onLogin}){
         <div style={{position:"absolute",bottom:-20,left:10,width:80,height:80,borderRadius:"50%",background:B.cyan,opacity:.14}}/>
         <div style={{position:"relative"}}>
           <div style={{marginBottom:24}}>
-            <KTLogoDark h={44}/>
+            <KTLogoDark h={180}/>
           </div>
           <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:22,color:"rgba(255,255,255,0.92)",lineHeight:1.3}}>Customisation<br/>System</div>
           <div style={{width:40,height:3,background:B.mint,borderRadius:2,marginTop:13}}/>
@@ -1543,7 +1545,7 @@ function ItineraryPage({quote,onBack}){
           ))}
         </div>
         <div style={{display:"flex",gap:12,alignItems:"center",marginTop:12,padding:"12px",borderRadius:10,background:IT.tealLight}}>
-          <div style={{width:40,height:40,borderRadius:20,background:IT.teal,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><KTLogoDark h={24}/></div>
+          <div style={{width:40,height:40,borderRadius:20,background:IT.teal,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><KTLogoDark h={120}/></div>
           <div><div style={{fontSize:13,fontWeight:600}}>Kairali Trails</div><div style={{fontSize:11,color:IT.muted}}>Your dedicated travel partner</div><div style={{fontSize:11,color:IT.teal,fontWeight:600,marginTop:2}}>📞 +91 800 800 4016</div></div>
         </div>
       </div>
@@ -2216,3 +2218,5 @@ function InclExclEditor({form, setForm}){
     </div>
   );
 }
+
+
