@@ -331,7 +331,7 @@ function Login({onLogin}){
           <div style={{marginBottom:16,display:"flex",justifyContent:"center"}}>
             <KTLogoDark h={64}/>
           </div>
-          <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontSize:22,color:"rgba(255,255,255,0.95)",fontWeight:700,lineHeight:1.3,textAlign:"center"}}>Customisation System</div>
+          <div style={{fontFamily:"'Playfair Display',serif",fontStyle:"italic",fontStyle:"italic",fontSize:22,color:"rgba(255,255,255,0.95)",fontWeight:700,lineHeight:1.3,textAlign:"center"}}>Customisation System</div>
           <div style={{width:40,height:3,background:B.mint,borderRadius:2,marginTop:13,marginLeft:"auto",marginRight:"auto"}}/>
         </div>
       </div>
@@ -1320,7 +1320,7 @@ const IT = {
   bg:"#F3F4F6",card:"#FFFFFF",cardAlt:"#F9FAFB",border:"#E5E7EB",ink:"#111827",sub:"#374151",muted:"#6B7280",faint:"#9CA3AF",teal:"#0496a5",tealLight:"#E0F7FA",orange:"#F97316",orangeLight:"#FFF7ED",mint:"#24fbaa",green:"#059669",greenBg:"#ECFDF5",red:"#EF4444",redBg:"#FEF2F2",
 };
 
-const itCSS=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sacramento&display=swap');.it-page *{box-sizing:border-box;margin:0;padding:0;}.it-page{font-family:'Inter',sans-serif;background:${IT.bg};color:${IT.ink};}.it-chevron{transition:transform 0.2s ease;}.it-chevron.open{transform:rotate(180deg);}@media print{.it-noprint{display:none!important;}}` ;
+const itCSS=`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,400;1,700&display=swap');.it-page *{box-sizing:border-box;margin:0;padding:0;}.it-page{font-family:'Inter',sans-serif;background:${IT.bg};color:${IT.ink};}.it-chevron{transition:transform 0.2s ease;}.it-chevron.open{transform:rotate(180deg);}@media print{.it-noprint{display:none!important;}}` ;
 
 function ItineraryPage({quote,onBack}){
   const [openDay,setOpenDay]=useState(0);
@@ -1383,7 +1383,7 @@ function ItineraryPage({quote,onBack}){
 
       {/* ── HERO ── */}
       <div style={{position:"relative",height:260,overflow:"hidden",background:"#0a2a3a"}}>
-        {IMGS.map((src,i)=><img key={i} src={src} crossOrigin="anonymous" referrerPolicy="no-referrer" alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:i===imgIdx?1:0,transition:"opacity 1.2s ease",display:"block"}}/>)}
+        {IMGS.map((src,i)=><img key={i} src={src}  alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",objectPosition:"center",opacity:i===imgIdx?1:0,transition:"opacity 1.2s ease",display:"block"}}/>)}
         <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.25) 0%,rgba(0,0,0,0.65) 100%)"}}/>
         {/* Top bar */}
         <div style={{position:"absolute",top:0,left:0,right:0,zIndex:3,display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px"}}>
@@ -1400,7 +1400,7 @@ function ItineraryPage({quote,onBack}){
         </div>
         {/* Trip name */}
         <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:2,padding:"0 16px 20px"}}>
-          <div style={{fontSize:38,fontWeight:400,color:"#fff",lineHeight:1.2,fontFamily:"'Sacramento',cursive",textShadow:"0 2px 12px rgba(0,0,0,0.5)"}}>
+          <div style={{fontSize:28,fontWeight:400,color:"#fff",lineHeight:1.2,fontFamily:"'Playfair Display',serif",fontStyle:"italic",textShadow:"0 2px 8px rgba(0,0,0,0.5)"}}>
             {clientName?`${clientName}'s`:"Your"} {countryName} Trip
           </div>
           <div style={{fontSize:13,color:"rgba(255,255,255,0.85)",marginTop:4,fontWeight:400}}>
