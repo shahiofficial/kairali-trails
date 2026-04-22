@@ -393,7 +393,13 @@ function AdminPanel({user,data,setData,fxRates,fxError,onLogout}){
   const [editPkg,setEditPkg]=useState(null);
   const [adminTab,setAdminTab]=useState("packages");
 
-  function savePkg(pkg){setData(d=>({...d,packages:pkg._isNew?[...d.packages,{...pkg,id:"pkg"+uid(),_isNew:undefined}]:d.packages.map(p=>p.id===pkg.id?pkg:p)}));setScreen("pkgList");}
+  function savePkg(pkg){
+    const finalId = pkg._isNew ? "pkg"+uid() : pkg.id;
+    const finalPkg = {...pkg, id:finalId, _isNew:undefined};
+    DB.savePkg(finalPkg).catch(e=>console.warn("DB save failed:",e));
+    setData(d=>({...d,packages:pkg._isNew?[...d.packages,finalPkg]:d.packages.map(p=>p.id===pkg.id?finalPkg:p)}));
+    setScreen("pkgList");
+  }
 
   if(screen==="editPkg"&&editPkg) return <PackageEditor pkg={editPkg} isNew={!!editPkg._isNew} onSave={savePkg} onBack={()=>setScreen("pkgList")} user={user} onLogout={onLogout} fxRates={fxRates} fxError={fxError}/>;
 
