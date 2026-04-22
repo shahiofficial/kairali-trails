@@ -867,36 +867,32 @@ function ItineraryTemplateEditor({form, setForm}){
                     <button onClick={()=>addActivity(d.id)} style={{background:"#F1ECFB",border:"none",color:"#7044C9",padding:"5px 11px",borderRadius:8,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ Add</button>
                   </div>
                   {(d.activities||[]).length===0&&<div style={{fontSize:11,color:B.textLight,padding:"8px",background:B.offWhite,borderRadius:9,textAlign:"center"}}>No activity cards</div>}
+                  {/* Simple 3-col preview */}
+                  {(d.activities||[]).length>0&&(
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10,background:B.tealLight,borderRadius:12,padding:10}}>
+                      {(d.activities||[]).map((a,ai)=>(
+                        <div key={a.id} style={{position:"relative"}}>
+                          <div style={{aspectRatio:"1",borderRadius:10,overflow:"hidden",background:B.border,marginBottom:4}}>
+                            {a.photo
+                              ?<img src={a.photo} alt={a.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              :<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:B.textLight,fontSize:20}}>📷</div>
+                            }
+                          </div>
+                          <div style={{fontSize:10,color:B.teal,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{a.name||"Unnamed"}</div>
+                          <button onClick={()=>removeActivity(d.id,a.id)} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.5)",border:"none",color:"#fff",width:18,height:18,borderRadius:9,cursor:"pointer",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {(d.activities||[]).map(a=>(
                     <div key={a.id} style={{background:B.offWhite,borderRadius:11,padding:"10px 12px",marginBottom:8,border:`1px solid ${B.border}`}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
-                        <div style={{fontSize:11,fontWeight:700,color:"#7044C9"}}>Activity Card</div>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                        <div style={{fontSize:11,fontWeight:700,color:"#7044C9"}}>📍 {a.name||"Activity"}</div>
                         <button onClick={()=>removeActivity(d.id,a.id)} style={{background:"none",border:"none",color:B.orange,fontSize:14,cursor:"pointer"}}>✕</button>
                       </div>
-                      <input value={a.name} onChange={e=>updateActivity(d.id,a.id,"name",e.target.value)} placeholder="Activity name (e.g. Patong Beach)" style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"8px 9px",fontSize:13,width:"100%",outline:"none",fontFamily:"'Poppins',sans-serif",marginBottom:6}}/>
-                      <textarea value={a.description||""} onChange={e=>updateActivity(d.id,a.id,"description",e.target.value)} placeholder="Description shown to customer" rows={2} style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"8px 9px",fontSize:12,width:"100%",outline:"none",fontFamily:"'Poppins',sans-serif",resize:"vertical",marginBottom:6}}/>
-                      <input value={a.photo||""} onChange={e=>updateActivity(d.id,a.id,"photo",e.target.value)} placeholder="Photo URL (paste link)" style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"8px 9px",fontSize:11,width:"100%",outline:"none",fontFamily:"'Poppins',sans-serif",marginBottom:6}}/>
-                      {a.photo&&<div style={{height:70,borderRadius:8,backgroundImage:`url(${a.photo})`,backgroundSize:"cover",backgroundPosition:"center",marginBottom:6}}/>}
-                      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
-                        <input value={a.duration||"Full Day"} onChange={e=>updateActivity(d.id,a.id,"duration",e.target.value)} placeholder="Duration" style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"7px 9px",fontSize:11,outline:"none",fontFamily:"'Poppins',sans-serif"}}/>
-                        <div onClick={()=>updateActivity(d.id,a.id,"ticketIncluded",!a.ticketIncluded)} style={{display:"flex",alignItems:"center",gap:7,padding:"7px 9px",background:B.white,borderRadius:8,border:`1px solid ${B.border}`,cursor:"pointer"}}>
-                          <div style={{width:32,height:18,borderRadius:9,background:a.ticketIncluded?B.teal:B.border,position:"relative",flexShrink:0}}>
-                            <div style={{position:"absolute",top:2,left:a.ticketIncluded?14:2,width:14,height:14,borderRadius:"50%",background:"white",transition:"left .15s"}}/>
-                          </div>
-                          <span style={{fontSize:10,color:a.ticketIncluded?B.teal:B.textLight,fontWeight:600}}>Ticket Incl.</span>
-                        </div>
-                      </div>
-                      {/* Activity notes */}
-                      <div style={{marginTop:8}}>
-                        <div style={{fontSize:9,color:B.textLight,fontWeight:700,marginBottom:4,letterSpacing:1}}>NOTES</div>
-                        {(a.notes||[]).map((n,ni)=>(
-                          <div key={ni} style={{display:"flex",gap:5,marginBottom:4}}>
-                            <input value={n} onChange={e=>updateActivityNote(d.id,a.id,ni,e.target.value)} placeholder="Note" style={{flex:1,background:B.white,border:`1px solid ${B.border}`,borderRadius:7,color:B.text,padding:"6px 8px",fontSize:11,outline:"none",fontFamily:"'Poppins',sans-serif"}}/>
-                            <button onClick={()=>removeActivityNote(d.id,a.id,ni)} style={{background:"none",border:"none",color:B.orange,fontSize:12,cursor:"pointer"}}>✕</button>
-                          </div>
-                        ))}
-                        <button onClick={()=>addActivityNote(d.id,a.id)} style={{background:B.tealLight,border:"none",color:B.teal,padding:"4px 9px",borderRadius:7,fontSize:10,fontWeight:600,cursor:"pointer"}}>+ Note</button>
-                      </div>
+                      <input value={a.name} onChange={e=>updateActivity(d.id,a.id,"name",e.target.value)} placeholder="Activity name (e.g. Maya Bay)" style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"9px 11px",fontSize:13,fontWeight:600,width:"100%",outline:"none",fontFamily:"'Poppins',sans-serif",marginBottom:8}}/>
+                      <input value={a.photo||""} onChange={e=>updateActivity(d.id,a.id,"photo",e.target.value)} placeholder="Paste Supabase photo URL here" style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"9px 11px",fontSize:12,width:"100%",outline:"none",fontFamily:"'Poppins',sans-serif",marginBottom:6}}/>
+                      {a.photo&&<img src={a.photo} alt={a.name} style={{width:"100%",height:90,objectFit:"cover",borderRadius:8}}/>}
                     </div>
                   ))}
                 </div>
