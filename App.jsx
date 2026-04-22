@@ -600,7 +600,7 @@ function PackageEditor({pkg,isNew,onSave,onBack,user,onLogout,fxRates,fxError}){
         <div style={{fontSize:12,color:B.textLight,marginBottom:10}}>Set adult & child prices separately for each activity.</div>
         {(form.includedActivities||[]).map(a=>(
           <Card key={a.id}>
-            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div><div style={{fontSize:13,fontWeight:700}}>{a.name||"Activity"}</div><div style={{fontSize:11,color:B.teal,fontWeight:600}}>Adult: {fmtINR(a.costPerPaxINR)} · Child: {fmtINR(a.kidCostPerPaxINR||0)}</div></div><DBtn onClick={()=>remArr("includedActivities",a.id)}>Remove</DBtn></div>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div><div style={{fontSize:13,fontWeight:700}}>{a.name||a.title||"Activity"}</div><div style={{fontSize:11,color:B.teal,fontWeight:600}}>Adult: {fmtINR(a.costPerPaxINR)} · Child: {fmtINR(a.kidCostPerPaxINR||0)}</div></div><DBtn onClick={()=>remArr("includedActivities",a.id)}>Remove</DBtn></div>
             <Inp label="NAME" value={a.name} onChange={e=>updArr("includedActivities",a.id,"name",e.target.value)}/>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
               <CurrencyInp label="ADULT COST/PAX" valueINR={a.costPerPaxINR} onChange={v=>updArr("includedActivities",a.id,"costPerPaxINR",v)} countryId={cId} fxRates={fxRates}/>
@@ -716,7 +716,7 @@ function ItineraryTemplateEditor({form, setForm}){
   }
 
   function addActivity(dayId){
-    const a={id:"a"+Date.now().toString(36),name:"",duration:"Full Day",ticketIncluded:true,notes:[]};
+    const a={id:"a"+Date.now().toString(36),name:"",title:"",photo:"",duration:"Full Day",ticketIncluded:true,notes:[]};
     setDays(days.map(d=>d.id===dayId?{...d,activities:[...d.activities,a]}:d));
   }
   function updateActivity(dayId,aId,field,val){
@@ -880,11 +880,11 @@ function ItineraryTemplateEditor({form, setForm}){
                         <div key={a.id} style={{position:"relative"}}>
                           <div style={{aspectRatio:"1",borderRadius:10,overflow:"hidden",background:B.border,marginBottom:4}}>
                             {a.photo
-                              ?<img src={a.photo} alt={a.name} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                              ?<img src={a.photo} alt={a.name||a.title} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                               :<div style={{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",color:B.textLight,fontSize:20}}>📷</div>
                             }
                           </div>
-                          <div style={{fontSize:10,color:B.teal,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{a.name||"Unnamed"}</div>
+                          <div style={{fontSize:10,color:B.teal,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{a.name||a.title||"Unnamed"}</div>
                           <button onClick={()=>removeActivity(d.id,a.id)} style={{position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.5)",border:"none",color:"#fff",width:18,height:18,borderRadius:9,cursor:"pointer",fontSize:10,display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button>
                         </div>
                       ))}
@@ -893,10 +893,10 @@ function ItineraryTemplateEditor({form, setForm}){
                   {(d.activities||[]).map(a=>(
                     <div key={a.id} style={{background:B.offWhite,borderRadius:11,padding:"10px 12px",marginBottom:8,border:`1px solid ${B.border}`}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
-                        <div style={{fontSize:11,fontWeight:700,color:"#7044C9"}}>📍 {a.name||"Activity"}</div>
+                        <div style={{fontSize:11,fontWeight:700,color:"#7044C9"}}>📍 {a.name||a.title||"Activity"}</div>
                         <button onClick={()=>removeActivity(d.id,a.id)} style={{background:"none",border:"none",color:B.orange,fontSize:14,cursor:"pointer"}}>✕</button>
                       </div>
-                      <input value={a.name} onChange={e=>updateActivity(d.id,a.id,"name",e.target.value)} placeholder="Activity name (e.g. Maya Bay)" style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"9px 11px",fontSize:13,fontWeight:600,width:"100%",outline:"none",fontFamily:"'Poppins',sans-serif",marginBottom:8}}/>
+                      <input value={a.name||a.title||""} onChange={e=>{updateActivity(d.id,a.id,"name",e.target.value);updateActivity(d.id,a.id,"title",e.target.value);}} placeholder="Activity name (e.g. Maya Bay)" style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"9px 11px",fontSize:13,fontWeight:600,width:"100%",outline:"none",fontFamily:"'Poppins',sans-serif",marginBottom:8}}/>
                       <input value={a.photo||""} onChange={e=>updateActivity(d.id,a.id,"photo",e.target.value)} placeholder="Paste Supabase photo URL here" style={{background:B.white,border:`1px solid ${B.border}`,borderRadius:8,color:B.text,padding:"9px 11px",fontSize:12,width:"100%",outline:"none",fontFamily:"'Poppins',sans-serif",marginBottom:6}}/>
                       {a.photo&&<img src={a.photo} alt={a.name} style={{width:"100%",height:90,objectFit:"cover",borderRadius:8}}/>}
                     </div>
@@ -1623,7 +1623,7 @@ function ItinDayCard({d,isOpen,onToggle}){
 
           {/* Activity Cards */}
           {(()=>{
-            const acts = (d.activities||[]).filter(ac=>ac.name||ac.title);
+            const acts = (d.activities||[]).filter(ac=>(ac.name||ac.title)&&(ac.name||ac.title).trim().length>0);
             if(acts.length===0) return null;
             return(
               <div style={{background:IT.teal,borderRadius:14,padding:"14px 12px",marginBottom:8}}>
