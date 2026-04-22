@@ -5,26 +5,29 @@ import { useState, useEffect } from "react";
 const SUPA_URL="https://aapbbeqwnnhmhedsgryt.supabase.co";
 const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhcGJiZXF3bm5obWhlZHNncnl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NzU3ODAsImV4cCI6MjA5MjI1MTc4MH0.bBdSvBdXeC_hqmE9syeeFYzmIHCVZlHUsh4_RX6zNH8";
 async function sbFetch(path,opts={}){
-  const {method="GET",body,params}=opts;
+  const {method="GET",body,params,upsert}=opts;
   let url=`${SUPA_URL}/rest/v1/${path}`;
   if(params)url+="?"+new URLSearchParams(params).toString();
-  const res=await fetch(url,{method,headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":"application/json","Prefer":method==="POST"||method==="PATCH"?"return=representation":""},body:body?JSON.stringify(body):undefined});
+  const prefer=[];
+  if(method==="POST"||method==="PATCH")prefer.push("return=representation");
+  if(upsert)prefer.push("resolution=merge-duplicates");
+  const res=await fetch(url,{method,headers:{"apikey":SUPA_KEY,"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":"application/json","Prefer":prefer.join(",")},body:body?JSON.stringify(body):undefined});
   if(res.status===204)return null;
   const data=await res.json();
-  if(!res.ok)throw new Error(JSON.stringify(data));
+  if(!res.ok){console.warn("Supabase error:",JSON.stringify(data));return null;}
   return data;
 }
 function pkgToRow(p){return{id:p.id,country_id:p.countryId,name:p.name,route:p.route,nights:p.nights,duration:p.duration,is_active:p.isActive!==false,flights:p.flights||[],hotels:p.hotels||[],transfers:p.transfers||[],included_activities:p.includedActivities||[],addons:p.addons||[],base_prices:p.basePrices||{},itinerary_days:p.itineraryDays||[],default_inclusions:p.defaultInclusions||[],default_exclusions:p.defaultExclusions||[]};}
-function rowToPkg(r){return{id:r.id,countryId:r.country_id,name:r.name,route:r.route,nights:r.nights,duration:r.duration,isActive:r.is_active,flights:r.flights||[],hotels:r.hotels||[],transfers:r.transfers||[],includedActivities:r.included_activities||[],addons:r.addons||[],basePrices:r.base_prices||{},itineraryDays:r.itinerary_days||[],defaultInclusions:r.default_inclusions||[],defaultExclusions:r.default_exclusions||[]};}
+function rowToPkg(r){return{id:r.id,countryId:r.country_id,name:r.name,route:r.route,nights:r.nights||4,duration:r.duration||((r.nights||4)+1)+" Days / "+(r.nights||4)+" Nights",isActive:r.is_active!==false,flights:r.flights||[],hotels:r.hotels||[],transfers:r.transfers||[],includedActivities:r.included_activities||[],addons:r.addons||[],basePrices:r.base_prices||{adult:0,child_5_11:0,child_2_4:0,infant:0},itineraryDays:r.itinerary_days||[],defaultInclusions:r.default_inclusions||[],defaultExclusions:r.default_exclusions||[]};}
 const DB={
   getPkgs:()=>sbFetch("packages?order=name"),
-  savePkg:(p)=>sbFetch("packages",{method:"POST",body:pkgToRow(p),params:{on_conflict:"id"}}).then(r=>r&&r[0]),
+  savePkg:(p)=>sbFetch("packages",{method:"POST",body:pkgToRow(p),params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
   delPkg:(id)=>sbFetch(`packages?id=eq.${id}`,{method:"DELETE"}),
   getDiscounts:()=>sbFetch("discounts?order=name"),
-  saveDiscount:(d)=>sbFetch("discounts",{method:"POST",body:d,params:{on_conflict:"id"}}).then(r=>r&&r[0]),
+  saveDiscount:(d)=>sbFetch("discounts",{method:"POST",body:d,params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
   delDiscount:(id)=>sbFetch(`discounts?id=eq.${id}`,{method:"DELETE"}),
   getReferrals:()=>sbFetch("referral_codes?order=code"),
-  saveReferral:(r)=>sbFetch("referral_codes",{method:"POST",body:r,params:{on_conflict:"id"}}).then(r=>r&&r[0]),
+  saveReferral:(r)=>sbFetch("referral_codes",{method:"POST",body:r,params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
   delReferral:(id)=>sbFetch(`referral_codes?id=eq.${id}`,{method:"DELETE"}),
   saveQuote:(q)=>sbFetch("quotes",{method:"POST",body:q}).then(r=>r&&r[0]),
 };
