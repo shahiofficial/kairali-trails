@@ -1326,12 +1326,17 @@ function ItinDayCard({d,isOpen,onToggle,cardRef,onOpenLightbox}){
           {/* STAY CARD — Thrillophilia style */}
           {d.stay&&(
             <div style={{background:"#fff",borderRadius:10,overflow:"hidden",marginBottom:8,border:`1px solid ${IT.border}`}}>
-              {d.day===1&&d.stay.hotelPhotos&&d.stay.hotelPhotos.length>0?(
+              {d.stay.hotelPhotos&&d.stay.hotelPhotos.length>0?(
                 <div>
                   <div style={{display:"flex",gap:4,overflowX:"auto",scrollSnapType:"x mandatory",padding:"4px"}}>
                     {d.stay.hotelPhotos.map((url,pi)=>(
                       <div key={pi} onClick={()=>onOpenLightbox&&onOpenLightbox(d.stay.hotelPhotos,pi)} style={{minWidth:"calc(100% - 8px)",height:160,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:8,flexShrink:0,scrollSnapAlign:"start",cursor:"pointer",position:"relative"}}>
-                        <div style={{position:"absolute",bottom:8,right:8,background:"rgba(0,0,0,0.5)",borderRadius:6,padding:"3px 7px",fontSize:10,color:"#fff",fontFamily:"'Inter',sans-serif"}}>🔍 Tap to expand</div>
+                        <div style={{position:"absolute",inset:0,display:"flex",alignItems:"flex-end",justifyContent:"flex-end",padding:8,borderRadius:8}}>
+                          <div style={{background:"rgba(0,0,0,0.55)",borderRadius:6,padding:"4px 8px",fontSize:11,color:"#fff",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",gap:4}}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                            Tap to view all photos
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1343,7 +1348,7 @@ function ItinDayCard({d,isOpen,onToggle,cardRef,onOpenLightbox}){
                     </div>
                   )}
                 </div>
-              ):d.stay.photo&&<div style={{height:100,backgroundImage:`url(${d.stay.photo})`,backgroundSize:"cover",backgroundPosition:"center"}}/>}
+              ):d.stay.photo?<div style={{height:100,backgroundImage:`url(${d.stay.photo})`,backgroundSize:"cover",backgroundPosition:"center"}}/>:null}
               <div style={{padding:"10px 12px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
                   <Icon.Bed size={13} color={IT.muted}/><span style={{fontSize:10,color:IT.muted}}>Stay At:</span>
@@ -1373,7 +1378,7 @@ function ItinDayCard({d,isOpen,onToggle,cardRef,onOpenLightbox}){
             <div style={{marginBottom:8}}>
               <div style={{fontSize:10,fontWeight:700,color:IT.muted,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Photos</div>
               <div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:4}}>
-                {(d.photos||[]).map((p,pi)=><div key={pi} style={{width:90,height:68,borderRadius:8,overflow:"hidden",flexShrink:0,background:IT.cardAlt}}><img src={p.url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/></div>)}
+                {(d.photos||[]).map((p,pi)=><div key={pi} onClick={()=>onOpenLightbox&&onOpenLightbox((d.photos||[]).map(x=>x.url||x),pi)} style={{width:90,height:68,borderRadius:8,overflow:"hidden",flexShrink:0,background:IT.cardAlt,cursor:"pointer",position:"relative"}}><img src={p.url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.15)"}}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div></div>)}
               </div>
             </div>
           )}
