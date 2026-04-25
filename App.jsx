@@ -947,6 +947,8 @@ function buildItinerary(quote){
   const fixed=template.slice(0,3).map((d,i)=>{
     const mapped={...d,day:i+1,date:arrivalDate?fmtShort(addDays(arrivalDate,i))+" "+fmtYear(addDays(arrivalDate,i)):`Day ${i+1}`};
     if(i===0&&mapped.transfers){mapped.transfers=mapped.transfers.map(t=>({...t,to:t.to==="Hotel"||t.to==="Sunshine Patong"||t.to==="hotel"?hotelName:t.to}));}
+    if(mapped.stay){mapped.stay={...mapped.stay,name:hotelName,photo:selHotelObj?.photos?.[0]||mapped.stay.photo||""};}
+    if(i===0&&mapped.stay){mapped.stay={...mapped.stay,hotelPhotos:(selHotelObj?.photos||[]).filter(Boolean)};}
     return mapped;
   });
   const totalSlots=1+extraNights;const middleDays=[];
@@ -958,7 +960,7 @@ function buildItinerary(quote){
       const addOnActivities=[{id:"ao"+i,name:addon.name+(addon.qty?` ×${addon.qty} tickets`:""),duration:"Full Day",ticketIncluded:true,notes:[],photo:"",description:""},...freeAddons.map((fa,fi)=>({id:"fa"+fi,name:fa.name+(fa.qty?` ×${fa.qty}`:``),duration:"Included",ticketIncluded:true,notes:[],photo:"",description:""}))];
       middleDays.push({...base,id:"addon_"+i,day:dayNum,date:dateStr,title:addon.name+(addon.qty?` ×${addon.qty}`:""),emoji:"🎪",location:"Phuket",transfers:[],activities:addOnActivities,bulletNotes:[`Enjoy ${addon.name} today.`,...freeAddons.map(fa=>`${fa.name} also included.`)],stay:null,leisure:"Enjoy the evening at your own pace ✨"});
     } else {
-      middleDays.push({id:"free_"+i,day:dayNum,date:dateStr,title:"Free Day — Explore at Your Own Pace",emoji:"🌴",location:"Phuket",transfers:[],bulletNotes:["Today is a free day. Explore Phuket at your own pace.","Visit local markets, beaches, or simply relax at the hotel."],activities:i===0&&paidAddons.length===0?freeAddons.map((fa,fi)=>({id:"fa"+fi,name:fa.name+(fa.qty?` ×${fa.qty}`:``),duration:"Included",ticketIncluded:true,notes:[],photo:"",description:""})):[],stay:null,leisure:"Enjoy the day at leisure ✨",photos:[],textBlocks:[]});
+      middleDays.push({id:"free_"+i,day:dayNum,date:dateStr,title:"Free Day — Explore at Your Own Pace",emoji:"🌴",location:"Phuket",transfers:[],bulletNotes:["Today is a free day. Explore Phuket at your own pace.","Visit local markets, beaches, or simply relax at the hotel."],activities:i===0&&paidAddons.length===0?freeAddons.map((fa,fi)=>({id:"fa"+fi,name:fa.name+(fa.qty?` ×${fa.qty}`:``),duration:"Included",ticketIncluded:true,notes:[],photo:"",description:""})):[],stay:{name:hotelName,checkInTime:"3:00 PM",checkOutTime:"11:00 AM",nights:1,breakfast:selHotelObj?.breakfast!==false,photo:selHotelObj?.photos?.[0]||"",hotelPhotos:[]},leisure:"Enjoy the day at leisure ✨",photos:[],textBlocks:[]});
     }
   }
   const deptTemplate=template[template.length-1]||{};const lastDayNum=4+totalSlots;
@@ -1275,7 +1277,22 @@ function ItinDayCard({d,isOpen,onToggle,cardRef}){
           {/* STAY CARD — Thrillophilia style */}
           {d.stay&&(
             <div style={{background:"#fff",borderRadius:10,overflow:"hidden",marginBottom:8,border:`1px solid ${IT.border}`}}>
-              {d.stay.photo&&<div style={{height:100,backgroundImage:`url(${d.stay.photo})`,backgroundSize:"cover",backgroundPosition:"center"}}/>}
+              {d.day===1&&d.stay.hotelPhotos&&d.stay.hotelPhotos.length>0?(
+                <div>
+                  <div style={{display:"flex",gap:4,overflowX:"auto",scrollSnapType:"x mandatory",padding:"4px"}}>
+                    {d.stay.hotelPhotos.map((url,pi)=>(
+                      <div key={pi} style={{minWidth:"calc(100% - 8px)",height:160,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:8,flexShrink:0,scrollSnapAlign:"start"}}/>
+                    ))}
+                  </div>
+                  {d.stay.hotelPhotos.length>1&&(
+                    <div style={{display:"flex",gap:4,padding:"4px 8px",overflowX:"auto"}}>
+                      {d.stay.hotelPhotos.map((url,pi)=>(
+                        <div key={pi} style={{width:52,height:38,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:5,flexShrink:0,border:"2px solid rgba(4,150,165,0.2)"}}/>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ):d.stay.photo&&<div style={{height:100,backgroundImage:`url(${d.stay.photo})`,backgroundSize:"cover",backgroundPosition:"center"}}/>}
               <div style={{padding:"10px 12px"}}>
                 <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
                   <Icon.Bed size={13} color={IT.muted}/><span style={{fontSize:10,color:IT.muted}}>Stay At:</span>
