@@ -942,7 +942,7 @@ function buildItinerary(quote){
     const qty=a.hasQty?(addonQtys||{})[a.id]:null;
     if(isFree(a))freeAddons.push({...a,qty});else paidAddons.push({...a,qty});
   });
-  const selHotelObj=quote.selHotel?(pkg.hotels||[]).find(h=>h.id===quote.selHotel):(pkg.hotels||[]).find(h=>h.isDefault);
+  const selHotelObj=quote.curHotel||quote.defHotel||(quote.selHotel?(pkg.hotels||[]).find(h=>h.id===quote.selHotel):(pkg.hotels||[]).find(h=>h.isDefault));
   const hotelName=selHotelObj?.name||"Hotel";
   const fixed=template.slice(0,3).map((d,i)=>{
     const mapped={...d,day:i+1,date:arrivalDate?fmtShort(addDays(arrivalDate,i))+" "+fmtYear(addDays(arrivalDate,i)):`Day ${i+1}`};
@@ -1183,7 +1183,52 @@ function ItineraryPage({quote,onBack}){
 }
 
 // ── ITINERARY DAY CARD ────────────────────────────────────────────────────────
+
+// ── HOTEL PHOTO LIGHTBOX ──────────────────────────────────────────────────────
+function HotelLightbox({photos, startIndex=0, onClose}){
+  const [idx, setIdx] = useState(startIndex);
+  const total = photos.length;
+  function prev(e){e.stopPropagation();setIdx(i=>(i-1+total)%total);}
+  function next(e){e.stopPropagation();setIdx(i=>(i+1)%total);}
+  useEffect(()=>{
+    function onKey(e){
+      if(e.key==="ArrowLeft")setIdx(i=>(i-1+total)%total);
+      if(e.key==="ArrowRight")setIdx(i=>(i+1)%total);
+      if(e.key==="Escape")onClose();
+    }
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[total]);
+  return(
+    <div onClick={onClose} style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.92)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+      {/* Close */}
+      <button onClick={onClose} style={{position:"absolute",top:16,right:16,background:"rgba(255,255,255,0.15)",border:"none",color:"#fff",width:38,height:38,borderRadius:19,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",zIndex:10000}}>✕</button>
+      {/* Counter */}
+      <div style={{position:"absolute",top:18,left:"50%",transform:"translateX(-50%)",color:"rgba(255,255,255,0.7)",fontSize:13,fontFamily:"'Inter',sans-serif",fontWeight:600}}>{idx+1} / {total}</div>
+      {/* Main image */}
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:480,padding:"0 48px",position:"relative"}}>
+        <img src={photos[idx]} alt="" style={{width:"100%",maxHeight:"70vh",objectFit:"contain",borderRadius:12,display:"block"}}/>
+        {/* Prev arrow */}
+        {total>1&&<button onClick={prev} style={{position:"absolute",left:4,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.18)",border:"none",color:"#fff",width:36,height:36,borderRadius:18,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>}
+        {/* Next arrow */}
+        {total>1&&<button onClick={next} style={{position:"absolute",right:4,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.18)",border:"none",color:"#fff",width:36,height:36,borderRadius:18,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>}
+      </div>
+      {/* Dot indicators */}
+      {total>1&&<div style={{display:"flex",gap:6,marginTop:16}}>
+        {photos.map((_,i)=><div key={i} onClick={e=>{e.stopPropagation();setIdx(i);}} style={{width:i===idx?22:7,height:7,borderRadius:4,background:i===idx?"#fff":"rgba(255,255,255,0.35)",transition:"all 0.2s",cursor:"pointer"}}/>)}
+      </div>}
+      {/* Thumbnail strip */}
+      {total>1&&<div style={{display:"flex",gap:6,marginTop:10,overflowX:"auto",maxWidth:480,padding:"4px 8px"}}>
+        {photos.map((url,i)=>(
+          <div key={i} onClick={e=>{e.stopPropagation();setIdx(i);}} style={{width:52,height:40,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:6,flexShrink:0,cursor:"pointer",border:i===idx?"2px solid #fff":"2px solid transparent",opacity:i===idx?1:0.6,transition:"all 0.2s"}}/>
+        ))}
+      </div>}
+    </div>
+  );
+}
+
 function ItinDayCard({d,isOpen,onToggle,cardRef}){
+  const [lightboxIdx,setLightboxIdx]=useState(null);
   return(
     <div ref={cardRef} style={{background:IT.card,borderRadius:12,marginBottom:8,border:`1px solid ${IT.border}`,overflow:"hidden",fontFamily:"'Inter',sans-serif"}}>
       {/* Header */}
@@ -1279,15 +1324,19 @@ function ItinDayCard({d,isOpen,onToggle,cardRef}){
             <div style={{background:"#fff",borderRadius:10,overflow:"hidden",marginBottom:8,border:`1px solid ${IT.border}`}}>
               {d.day===1&&d.stay.hotelPhotos&&d.stay.hotelPhotos.length>0?(
                 <div>
+                  {/* Lightbox */}
+                  {lightboxIdx!==null&&<HotelLightbox photos={d.stay.hotelPhotos} startIndex={lightboxIdx} onClose={()=>setLightboxIdx(null)}/>}
                   <div style={{display:"flex",gap:4,overflowX:"auto",scrollSnapType:"x mandatory",padding:"4px"}}>
                     {d.stay.hotelPhotos.map((url,pi)=>(
-                      <div key={pi} style={{minWidth:"calc(100% - 8px)",height:160,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:8,flexShrink:0,scrollSnapAlign:"start"}}/>
+                      <div key={pi} onClick={()=>setLightboxIdx(pi)} style={{minWidth:"calc(100% - 8px)",height:160,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:8,flexShrink:0,scrollSnapAlign:"start",cursor:"pointer",position:"relative"}}>
+                        <div style={{position:"absolute",bottom:8,right:8,background:"rgba(0,0,0,0.5)",borderRadius:6,padding:"3px 7px",fontSize:10,color:"#fff",fontFamily:"'Inter',sans-serif"}}>🔍 Tap to expand</div>
+                      </div>
                     ))}
                   </div>
                   {d.stay.hotelPhotos.length>1&&(
                     <div style={{display:"flex",gap:4,padding:"4px 8px",overflowX:"auto"}}>
                       {d.stay.hotelPhotos.map((url,pi)=>(
-                        <div key={pi} style={{width:52,height:38,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:5,flexShrink:0,border:"2px solid rgba(4,150,165,0.2)"}}/>
+                        <div key={pi} onClick={()=>setLightboxIdx(pi)} style={{width:52,height:38,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:5,flexShrink:0,border:lightboxIdx===pi?"2px solid rgba(4,150,165,0.8)":"2px solid rgba(4,150,165,0.2)",cursor:"pointer"}}/>
                       ))}
                     </div>
                   )}
