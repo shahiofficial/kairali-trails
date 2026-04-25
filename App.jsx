@@ -1000,102 +1000,169 @@ const itCSS=`
 
 // ── ITINERARY PAGE ────────────────────────────────────────────────────────────
 
-// ── TESTIMONIALS DATA (country-specific) ─────────────────────────────────────
-const TESTIMONIALS = {
+// ── CLIENT TRAVEL PHOTOS (country-specific) ──────────────────────────────────
+const CLIENT_PHOTOS = {
   th: [
-    {name:"Rahul Sharma",city:"Mumbai",quote:"Phuket was absolutely magical! Every detail was perfect.",stars:5,avatar:"https://i.pravatar.cc/80?img=11"},
-    {name:"Priya Nair",city:"Kochi",quote:"Best trip of my life. The Phi Phi islands blew my mind!",stars:5,avatar:"https://i.pravatar.cc/80?img=44"},
-    {name:"Amit Patel",city:"Ahmedabad",quote:"Seamless experience from start to finish. Highly recommend!",stars:5,avatar:"https://i.pravatar.cc/80?img=12"},
-    {name:"Deepa Menon",city:"Bangalore",quote:"Tiger Kingdom was unforgettable. Kids loved every moment.",stars:5,avatar:"https://i.pravatar.cc/80?img=47"},
-    {name:"Vikram Singh",city:"Delhi",quote:"Kairali Trails made our honeymoon absolutely special!",stars:5,avatar:"https://i.pravatar.cc/80?img=15"},
-    {name:"Sneha Iyer",city:"Chennai",quote:"The night street food tour was the highlight of our trip.",stars:5,avatar:"https://i.pravatar.cc/80?img=48"},
-    {name:"Arjun Kumar",city:"Hyderabad",quote:"Professional team, great hotels, flawless transfers.",stars:5,avatar:"https://i.pravatar.cc/80?img=17"},
-    {name:"Meera Pillai",city:"Trivandrum",quote:"Phi Phi island speedboat tour was breathtaking! 10/10",stars:5,avatar:"https://i.pravatar.cc/80?img=49"},
+    {name:"Rahul & Family",location:"Phi Phi Islands",quote:"Absolutely magical!",stars:5,
+     photo:"https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&q=80"},
+    {name:"Priya Nair",location:"Patong Beach",quote:"Best trip ever!",stars:5,
+     photo:"https://images.unsplash.com/photo-1504214208698-ea1916a2195a?w=400&q=80"},
+    {name:"Amit & Sneha",location:"Big Buddha",quote:"Breathtaking views!",stars:5,
+     photo:"https://images.unsplash.com/photo-1506665531195-3566af2b4dfa?w=400&q=80"},
+    {name:"Deepa Menon",location:"Tiger Kingdom",quote:"Once in a lifetime!",stars:5,
+     photo:"https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=400&q=80"},
+    {name:"Vikram Singh",location:"Maya Bay",quote:"Paradise on earth!",stars:5,
+     photo:"https://images.unsplash.com/photo-1537956965359-7573183d1f57?w=400&q=80"},
+    {name:"Meera & Kids",location:"Phuket Old Town",quote:"Kids loved every moment!",stars:5,
+     photo:"https://images.unsplash.com/photo-1519451241324-20b4ea2c4220?w=400&q=80"},
+    {name:"Arjun Kumar",location:"Bangla Road",quote:"Nightlife was incredible!",stars:5,
+     photo:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80"},
+    {name:"Kavya & Rohan",location:"Speedboat Tour",quote:"Best honeymoon ever!",stars:5,
+     photo:"https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80"},
+    {name:"Suresh Family",location:"Chalong Temple",quote:"Spiritual & beautiful!",stars:5,
+     photo:"https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=80"},
+    {name:"Anita Das",location:"Monkey Beach",quote:"So much fun!",stars:5,
+     photo:"https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?w=400&q=80"},
   ],
   my: [
-    {name:"Rohan Verma",city:"Pune",quote:"KL city tour was fantastic. Batu Caves was incredible!",stars:5,avatar:"https://i.pravatar.cc/80?img=21"},
-    {name:"Anita Das",city:"Kolkata",quote:"Genting Highland was so cool — literally and figuratively!",stars:5,avatar:"https://i.pravatar.cc/80?img=43"},
-    {name:"Suresh Babu",city:"Vizag",quote:"Malaysia exceeded all our expectations. Amazing value!",stars:5,avatar:"https://i.pravatar.cc/80?img=22"},
-    {name:"Kavitha Rao",city:"Mysore",quote:"The chocolate gallery and night tour were wonderful!",stars:5,avatar:"https://i.pravatar.cc/80?img=46"},
-    {name:"Prasad Nair",city:"Kochi",quote:"Our family trip to KL was perfectly organized. Thank you!",stars:5,avatar:"https://i.pravatar.cc/80?img=25"},
-    {name:"Lakshmi Reddy",city:"Hyderabad",quote:"Best honeymoon destination! KL has so much to offer.",stars:5,avatar:"https://i.pravatar.cc/80?img=50"},
-    {name:"Arun Krishnan",city:"Coimbatore",quote:"Putrajaya photo stop was stunning. Great itinerary!",stars:5,avatar:"https://i.pravatar.cc/80?img=27"},
-    {name:"Divya Mohan",city:"Calicut",quote:"Seamless transfers and amazing hotel. Will book again!",stars:5,avatar:"https://i.pravatar.cc/80?img=45"},
+    {name:"Ravi & Family",location:"Batu Caves",quote:"272 steps worth it!",stars:5,
+     photo:"https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=400&q=80"},
+    {name:"Pallavi Jain",location:"Petronas Towers",quote:"Iconic & stunning!",stars:5,
+     photo:"https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80"},
+    {name:"Kiran & Divya",location:"Genting Highland",quote:"Cool mountain escape!",stars:5,
+     photo:"https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=400&q=80"},
+    {name:"Harish Nambiar",location:"KL Night Tour",quote:"City lights amazing!",stars:5,
+     photo:"https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80"},
+    {name:"Bindhu & Ajith",location:"Putrajaya",quote:"So photogenic!",stars:5,
+     photo:"https://images.unsplash.com/photo-1526666923127-b2970f64b422?w=400&q=80"},
+    {name:"Rekha Thomas",location:"Central Market",quote:"Shopping paradise!",stars:5,
+     photo:"https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&q=80"},
+    {name:"Sanjay & Kids",location:"Chin Swee Temple",quote:"Truly spectacular!",stars:5,
+     photo:"https://images.unsplash.com/photo-1575474600626-1f9e98e3a35b?w=400&q=80"},
+    {name:"Geetha Nair",location:"Bukit Bintang",quote:"Best food street ever!",stars:5,
+     photo:"https://images.unsplash.com/photo-1561622539-bcda43855cf8?w=400&q=80"},
   ],
   id: [
-    {name:"Kiran Joshi",city:"Nagpur",quote:"Bali was a dream come true. Kairali made it perfect!",stars:5,avatar:"https://i.pravatar.cc/80?img=31"},
-    {name:"Nandini Shah",city:"Surat",quote:"The rice terraces and temples were breathtaking!",stars:5,avatar:"https://i.pravatar.cc/80?img=42"},
-    {name:"Ravi Teja",city:"Vijayawada",quote:"Indonesia trip was well-organized and memorable.",stars:5,avatar:"https://i.pravatar.cc/80?img=32"},
-    {name:"Pallavi Jain",city:"Indore",quote:"Loved every moment in Bali. Highly recommend Kairali!",stars:5,avatar:"https://i.pravatar.cc/80?img=41"},
-    {name:"Ganesh Patil",city:"Nashik",quote:"Amazing experience! The team was incredibly helpful.",stars:5,avatar:"https://i.pravatar.cc/80?img=35"},
-    {name:"Swati Kulkarni",city:"Aurangabad",quote:"Bali exceeded our expectations on every front!",stars:5,avatar:"https://i.pravatar.cc/80?img=40"},
+    {name:"Nandini Shah",location:"Rice Terraces",quote:"Surreal landscape!",stars:5,
+     photo:"https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=80"},
+    {name:"Ganesh Patil",location:"Tanah Lot",quote:"Magical sunset!",stars:5,
+     photo:"https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=400&q=80"},
+    {name:"Swati & Raj",location:"Ubud Monkey Forest",quote:"Wild & wonderful!",stars:5,
+     photo:"https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=400&q=80"},
+    {name:"Rohan Verma",location:"Kuta Beach",quote:"Surfer's paradise!",stars:5,
+     photo:"https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?w=400&q=80"},
+    {name:"Lakshmi Reddy",location:"Seminyak",quote:"Luxury & beauty!",stars:5,
+     photo:"https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80"},
+    {name:"Arun Family",location:"Mount Batur",quote:"Sunrise was divine!",stars:5,
+     photo:"https://images.unsplash.com/photo-1506665531195-3566af2b4dfa?w=400&q=80"},
   ],
   sg: [
-    {name:"Harish Nambiar",city:"Thrissur",quote:"Singapore was brilliant — Gardens by Bay was magical!",stars:5,avatar:"https://i.pravatar.cc/80?img=51"},
-    {name:"Rekha Thomas",city:"Ernakulam",quote:"Marina Bay Sands view was stunning. Perfect trip!",stars:5,avatar:"https://i.pravatar.cc/80?img=52"},
-    {name:"Sanjay Menon",city:"Palakkad",quote:"Universal Studios with family was unforgettable!",stars:5,avatar:"https://i.pravatar.cc/80?img=53"},
-    {name:"Geetha Nair",city:"Kozhikode",quote:"Singapore is so clean and organized. Loved every bit!",stars:5,avatar:"https://i.pravatar.cc/80?img=54"},
-    {name:"Ajith Kumar",city:"Kannur",quote:"Best organized trip ever. Kairali Trails is top class!",stars:5,avatar:"https://i.pravatar.cc/80?img=55"},
-    {name:"Bindhu Suresh",city:"Alappuzha",quote:"Sentosa Island was amazing! Kids had a blast!",stars:5,avatar:"https://i.pravatar.cc/80?img=56"},
+    {name:"Ajith & Family",location:"Gardens by the Bay",quote:"Future meets nature!",stars:5,
+     photo:"https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80"},
+    {name:"Meena Pillai",location:"Marina Bay Sands",quote:"Infinity pool was epic!",stars:5,
+     photo:"https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=400&q=80"},
+    {name:"Suresh & Kids",location:"Universal Studios",quote:"Kids went crazy!",stars:5,
+     photo:"https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&q=80"},
+    {name:"Preethi Nair",location:"Sentosa Island",quote:"Beach + theme park!",stars:5,
+     photo:"https://images.unsplash.com/photo-1519451241324-20b4ea2c4220?w=400&q=80"},
+    {name:"Vivek & Ananya",location:"Clarke Quay",quote:"Nightlife was brilliant!",stars:5,
+     photo:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80"},
+    {name:"Radha Krishnan",location:"Chinatown",quote:"Culture & food heaven!",stars:5,
+     photo:"https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=80"},
   ],
 };
 
-// ── TESTIMONIALS MARQUEE COMPONENT ───────────────────────────────────────────
-function TestimonialsMarquee({countryId}){
-  const all = TESTIMONIALS[countryId] || TESTIMONIALS.th;
-  // Split into two rows
-  const row1 = [...all, ...all]; // doubled for seamless loop
-  const row2 = [...all.slice(Math.floor(all.length/2)), ...all.slice(0,Math.floor(all.length/2)), ...all.slice(Math.floor(all.length/2)), ...all.slice(0,Math.floor(all.length/2))];
+// ── CLIENT PHOTOS MARQUEE ─────────────────────────────────────────────────────
+function ClientPhotosMarquee({countryId}){
+  const all = CLIENT_PHOTOS[countryId] || CLIENT_PHOTOS.th;
+  // Double for seamless infinite loop
+  const row1 = [...all, ...all];
+  const row2 = [...all.slice(Math.ceil(all.length/2)), ...all.slice(0, Math.ceil(all.length/2)), ...all.slice(Math.ceil(all.length/2)), ...all.slice(0, Math.ceil(all.length/2))];
+  const [lightbox, setLightbox] = useState(null);
 
-  function StarRow(){
-    return <div style={{display:"flex",gap:2,marginBottom:4}}>
-      {[1,2,3,4,5].map(i=><svg key={i} width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
-    </div>;
-  }
-
-  function TestiCard({t}){
+  function PhotoCard({p, onClick}){
     return(
-      <div style={{background:"#fff",borderRadius:14,padding:"12px 14px",marginRight:10,flexShrink:0,width:200,border:"1px solid #F3F4F6",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-          <img src={t.avatar} alt={t.name} style={{width:36,height:36,borderRadius:18,objectFit:"cover",flexShrink:0,border:"2px solid #E0F7FA"}}/>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:"#111827",lineHeight:1.2}}>{t.name}</div>
-            <div style={{fontSize:10,color:"#6B7280"}}>{t.city}</div>
-          </div>
+      <div onClick={onClick} style={{width:160,marginRight:10,flexShrink:0,borderRadius:16,overflow:"hidden",cursor:"pointer",position:"relative",aspectRatio:"3/4",boxShadow:"0 4px 16px rgba(0,0,0,0.18)",border:"2px solid rgba(255,255,255,0.8)"}}>
+        {/* Photo */}
+        <img src={p.photo} alt={p.name} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} loading="lazy"/>
+        {/* Gradient overlay */}
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0) 40%,rgba(0,0,0,0.75) 100%)"}}/>
+        {/* Stars top right */}
+        <div style={{position:"absolute",top:8,right:8,display:"flex",gap:1}}>
+          {[1,2,3,4,5].map(i=><svg key={i} width="9" height="9" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
         </div>
-        <StarRow/>
-        <div style={{fontSize:11,color:"#374151",lineHeight:1.5,fontStyle:"italic"}}>"{t.quote}"</div>
+        {/* Caption */}
+        <div style={{position:"absolute",bottom:0,left:0,right:0,padding:"10px 10px 12px"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#fff",lineHeight:1.3,marginBottom:2,fontFamily:"'Inter',sans-serif"}}>{p.name}</div>
+          <div style={{display:"flex",alignItems:"center",gap:4}}>
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span style={{fontSize:10,color:"rgba(255,255,255,0.9)",fontFamily:"'Inter',sans-serif"}}>{p.location}</span>
+          </div>
+          <div style={{fontSize:10,color:"rgba(255,255,255,0.75)",marginTop:3,fontStyle:"italic",fontFamily:"'Inter',sans-serif",lineHeight:1.3}}>"{p.quote}"</div>
+        </div>
       </div>
     );
   }
 
   return(
-    <div style={{margin:"6px 0 0",background:"linear-gradient(135deg,#E0F7FA,#E8F5E9)",borderRadius:12,padding:"16px 0 14px",overflow:"hidden",border:"1px solid #E5E7EB"}}>
-      <div style={{padding:"0 14px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+    <div style={{margin:"0",background:"linear-gradient(135deg,#0d2e33,#0496a5)",borderRadius:14,padding:"16px 0 14px",overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{padding:"0 16px 14px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div>
-          <div style={{fontSize:14,fontWeight:800,color:"#111827",fontFamily:"'Inter',sans-serif"}}>What Our Clients Say</div>
-          <div style={{fontSize:11,color:"#6B7280",marginTop:2,fontFamily:"'Inter',sans-serif"}}>Real reviews from happy travellers</div>
+          <div style={{fontSize:15,fontWeight:800,color:"#fff",fontFamily:"'Inter',sans-serif"}}>Happy Travellers 📸</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginTop:2,fontFamily:"'Inter',sans-serif"}}>Real moments from our clients</div>
         </div>
-        <div style={{display:"flex",gap:1}}>
-          {[1,2,3,4,5].map(i=><svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
+        <div style={{background:"rgba(255,255,255,0.15)",borderRadius:20,padding:"4px 10px",fontSize:11,color:"#fff",fontWeight:700,fontFamily:"'Inter',sans-serif"}}>500+ trips</div>
+      </div>
+
+      {/* Lightbox */}
+      {lightbox!==null&&(
+        <div onClick={()=>setLightbox(null)} style={{position:"fixed",inset:0,zIndex:9999,background:"rgba(0,0,0,0.93)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+          <button onClick={()=>setLightbox(null)} style={{position:"absolute",top:16,right:16,background:"rgba(255,255,255,0.15)",border:"none",color:"#fff",width:38,height:38,borderRadius:19,fontSize:18,cursor:"pointer"}}>✕</button>
+          {/* Image */}
+          <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:400,padding:"0 20px",position:"relative"}}>
+            <img src={all[lightbox].photo} alt={all[lightbox].name} style={{width:"100%",maxHeight:"65vh",objectFit:"cover",borderRadius:16,display:"block"}}/>
+            {/* Prev */}
+            <button onClick={e=>{e.stopPropagation();setLightbox(i=>(i-1+all.length)%all.length);}} style={{position:"absolute",left:24,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.2)",border:"none",color:"#fff",width:36,height:36,borderRadius:18,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+            {/* Next */}
+            <button onClick={e=>{e.stopPropagation();setLightbox(i=>(i+1)%all.length);}} style={{position:"absolute",right:24,top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,0.2)",border:"none",color:"#fff",width:36,height:36,borderRadius:18,fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+          </div>
+          {/* Caption */}
+          <div style={{marginTop:16,textAlign:"center",padding:"0 20px"}}>
+            <div style={{fontSize:16,fontWeight:700,color:"#fff",fontFamily:"'Inter',sans-serif"}}>{all[lightbox].name}</div>
+            <div style={{display:"flex",alignItems:"center",gap:4,justifyContent:"center",marginTop:4}}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style={{fontSize:13,color:"rgba(255,255,255,0.85)",fontFamily:"'Inter',sans-serif"}}>{all[lightbox].location}</span>
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.7)",marginTop:6,fontStyle:"italic",fontFamily:"'Inter',sans-serif"}}>"{all[lightbox].quote}"</div>
+            <div style={{display:"flex",gap:2,justifyContent:"center",marginTop:8}}>
+              {[1,2,3,4,5].map(i=><svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
+            </div>
+            {/* Dot indicators */}
+            <div style={{display:"flex",gap:5,justifyContent:"center",marginTop:10}}>
+              {all.map((_,i)=><div key={i} onClick={e=>{e.stopPropagation();setLightbox(i);}} style={{width:i===lightbox?18:6,height:6,borderRadius:3,background:i===lightbox?"#fff":"rgba(255,255,255,0.35)",transition:"all 0.2s",cursor:"pointer"}}/>)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Row 1 — slides left */}
+      <div className="marquee-wrap" style={{marginBottom:10}}>
+        <div className="marquee-left" style={{display:"flex",width:"max-content",paddingLeft:16}}>
+          {row1.map((p,i)=><PhotoCard key={i} p={p} onClick={()=>setLightbox(i%all.length)}/>)}
         </div>
       </div>
-      {/* Row 1 — moves left */}
-      <div className="marquee-wrap" style={{marginBottom:8}}>
-        <div className="marquee-left" style={{display:"flex",width:"max-content",paddingLeft:14}}>
-          {row1.map((t,i)=><TestiCard key={i} t={t}/>)}
-        </div>
-      </div>
-      {/* Row 2 — moves right */}
+      {/* Row 2 — slides right */}
       <div className="marquee-wrap">
-        <div className="marquee-right" style={{display:"flex",width:"max-content",paddingLeft:14}}>
-          {row2.map((t,i)=><TestiCard key={i} t={t}/>)}
+        <div className="marquee-right" style={{display:"flex",width:"max-content",paddingLeft:16}}>
+          {row2.map((p,i)=><PhotoCard key={i} p={p} onClick={()=>setLightbox(i%all.length)}/>)}
         </div>
       </div>
-      <div style={{padding:"10px 14px 0",textAlign:"center",fontSize:10,color:"#9CA3AF",fontFamily:"'Inter',sans-serif"}}>★ 500+ happy travellers and counting</div>
+      <div style={{padding:"12px 16px 0",textAlign:"center",fontSize:11,color:"rgba(255,255,255,0.55)",fontFamily:"'Inter',sans-serif"}}>Tap any photo to view ✨</div>
     </div>
   );
 }
+
 
 function ItineraryPage({quote,onBack}){
   const [openDay,setOpenDay]=useState(0);
@@ -1258,7 +1325,7 @@ function ItineraryPage({quote,onBack}){
 
       {/* TESTIMONIALS MARQUEE */}
       <div style={{margin:"6px 10px 0"}}>
-        <TestimonialsMarquee countryId={pkg?.countryId||"th"}/>
+        <ClientPhotosMarquee countryId={pkg?.countryId||"th"}/>
       </div>
       {/* TRUST */}
       <div style={{margin:"8px 12px 0",background:IT.card,borderRadius:12,padding:"14px",border:`1px solid ${IT.border}`,fontFamily:"'Inter',sans-serif"}}>
