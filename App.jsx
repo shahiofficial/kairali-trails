@@ -1707,10 +1707,10 @@ function RangePicker({arrivalDate, setArrivalDate, totalNights}){
 function InclExclEditor({form, setForm}){
   const incls = form.defaultInclusions || [];
   const excls = form.defaultExclusions || [];
-  function addIncl(){ setForm(f=>({...f,defaultInclusions:[...(f.defaultInclusions||[]),""]}))); }
+  function addIncl(){ setForm(f=>({...f,defaultInclusions:[...(f.defaultInclusions||[]),""]})); }
   function updIncl(i,v){ setForm(f=>({...f,defaultInclusions:(f.defaultInclusions||[]).map((x,j)=>j===i?v:x)})); }
   function delIncl(i){ setForm(f=>({...f,defaultInclusions:(f.defaultInclusions||[]).filter((_,j)=>j!==i)})); }
-  function addExcl(){ setForm(f=>({...f,defaultExclusions:[...(f.defaultExclusions||[]),""]}))); }
+  function addExcl(){ setForm(f=>({...f,defaultExclusions:[...(f.defaultExclusions||[]),""]})); }
   function updExcl(i,v){ setForm(f=>({...f,defaultExclusions:(f.defaultExclusions||[]).map((x,j)=>j===i?v:x)})); }
   function delExcl(i){ setForm(f=>({...f,defaultExclusions:(f.defaultExclusions||[]).filter((_,j)=>j!==i)})); }
   return(
