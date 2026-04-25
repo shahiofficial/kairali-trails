@@ -996,6 +996,7 @@ const itCSS=`
 function ItineraryPage({quote,onBack}){
   const [openDay,setOpenDay]=useState(0);
   const cardRefs=useRef({});
+  const [lightbox,setLightbox]=useState(null); // {photos:[],idx:0}
   const days=buildItinerary(quote);
   const {T,pax,pkg,clientName,arrivalDate,chosenDiscount,appliedRef}=quote;
   const COUNTRY_NAMES={"th":"Thailand","my":"Malaysia","id":"Indonesia","sg":"Singapore"};
@@ -1013,9 +1014,11 @@ function ItineraryPage({quote,onBack}){
     const ref=cardRefs.current[idx];
     const nextOpen=openDay===idx?-1:idx;
     if(ref&&nextOpen!==-1){
-      const top=ref.getBoundingClientRect().top+window.scrollY-70;
+      // Capture position BEFORE expanding, then scroll after render
+      const top=ref.getBoundingClientRect().top+window.scrollY-60;
       setOpenDay(nextOpen);
-      requestAnimationFrame(()=>window.scrollTo({top,behavior:'smooth'}));
+      // Wait for re-render then scroll so day header is at top
+      setTimeout(()=>window.scrollTo({top,behavior:'smooth'}),50);
     } else {
       setOpenDay(nextOpen);
     }
@@ -1075,7 +1078,7 @@ function ItineraryPage({quote,onBack}){
       {/* ITINERARY DAYS */}
       <div style={{padding:"10px 12px 0"}}>
         {days.map((d,idx)=>(
-          <ItinDayCard key={d.id||idx} d={d} isOpen={openDay===idx} onToggle={()=>handleToggle(idx)} cardRef={el=>cardRefs.current[idx]=el}/>
+          <ItinDayCard key={d.id||idx} d={d} isOpen={openDay===idx} onToggle={()=>handleToggle(idx)} cardRef={el=>cardRefs.current[idx]=el} onOpenLightbox={(photos,startIdx)=>setLightbox({photos,idx:startIdx})}/>
         ))}
       </div>
 
@@ -1178,6 +1181,8 @@ function ItineraryPage({quote,onBack}){
           <Icon.WhatsApp size={18}/>Send via WhatsApp
         </button>
       </div>
+      {/* LIGHTBOX — renders at root level, not clipped by any overflow:hidden */}
+      {lightbox&&<HotelLightbox photos={lightbox.photos} startIndex={lightbox.idx} onClose={()=>setLightbox(null)}/>}
     </div>
   );
 }
@@ -1227,8 +1232,7 @@ function HotelLightbox({photos, startIndex=0, onClose}){
   );
 }
 
-function ItinDayCard({d,isOpen,onToggle,cardRef}){
-  const [lightboxIdx,setLightboxIdx]=useState(null);
+function ItinDayCard({d,isOpen,onToggle,cardRef,onOpenLightbox}){
   return(
     <div ref={cardRef} style={{background:IT.card,borderRadius:12,marginBottom:8,border:`1px solid ${IT.border}`,overflow:"hidden",fontFamily:"'Inter',sans-serif"}}>
       {/* Header */}
@@ -1324,11 +1328,9 @@ function ItinDayCard({d,isOpen,onToggle,cardRef}){
             <div style={{background:"#fff",borderRadius:10,overflow:"hidden",marginBottom:8,border:`1px solid ${IT.border}`}}>
               {d.day===1&&d.stay.hotelPhotos&&d.stay.hotelPhotos.length>0?(
                 <div>
-                  {/* Lightbox */}
-                  {lightboxIdx!==null&&<HotelLightbox photos={d.stay.hotelPhotos} startIndex={lightboxIdx} onClose={()=>setLightboxIdx(null)}/>}
                   <div style={{display:"flex",gap:4,overflowX:"auto",scrollSnapType:"x mandatory",padding:"4px"}}>
                     {d.stay.hotelPhotos.map((url,pi)=>(
-                      <div key={pi} onClick={()=>setLightboxIdx(pi)} style={{minWidth:"calc(100% - 8px)",height:160,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:8,flexShrink:0,scrollSnapAlign:"start",cursor:"pointer",position:"relative"}}>
+                      <div key={pi} onClick={()=>onOpenLightbox&&onOpenLightbox(d.stay.hotelPhotos,pi)} style={{minWidth:"calc(100% - 8px)",height:160,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:8,flexShrink:0,scrollSnapAlign:"start",cursor:"pointer",position:"relative"}}>
                         <div style={{position:"absolute",bottom:8,right:8,background:"rgba(0,0,0,0.5)",borderRadius:6,padding:"3px 7px",fontSize:10,color:"#fff",fontFamily:"'Inter',sans-serif"}}>🔍 Tap to expand</div>
                       </div>
                     ))}
@@ -1336,7 +1338,7 @@ function ItinDayCard({d,isOpen,onToggle,cardRef}){
                   {d.stay.hotelPhotos.length>1&&(
                     <div style={{display:"flex",gap:4,padding:"4px 8px",overflowX:"auto"}}>
                       {d.stay.hotelPhotos.map((url,pi)=>(
-                        <div key={pi} onClick={()=>setLightboxIdx(pi)} style={{width:52,height:38,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:5,flexShrink:0,border:lightboxIdx===pi?"2px solid rgba(4,150,165,0.8)":"2px solid rgba(4,150,165,0.2)",cursor:"pointer"}}/>
+                        <div key={pi} onClick={()=>onOpenLightbox&&onOpenLightbox(d.stay.hotelPhotos,pi)} style={{width:52,height:38,backgroundImage:`url(${url})`,backgroundSize:"cover",backgroundPosition:"center",borderRadius:5,flexShrink:0,border:"2px solid rgba(4,150,165,0.2)",cursor:"pointer"}}/>
                       ))}
                     </div>
                   )}
