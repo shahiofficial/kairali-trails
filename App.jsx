@@ -29,6 +29,9 @@ const DB={
   saveReferral:(r)=>sbFetch("referral_codes",{method:"POST",body:r,params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
   delReferral:(id)=>sbFetch(`referral_codes?id=eq.${id}`,{method:"DELETE"}),
   saveQuote:(q)=>sbFetch("quotes",{method:"POST",body:q}).then(r=>r&&r[0]),
+  getClientPhotos:()=>sbFetch("client_photos?order=created_at"),
+  saveClientPhoto:(p)=>sbFetch("client_photos",{method:"POST",body:p,params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
+  delClientPhoto:(id)=>sbFetch(`client_photos?id=eq.${id}`,{method:"DELETE"}),
 };
 
 const LOGO_LIGHT = null;
@@ -146,6 +149,7 @@ const INIT = {
     {id:"r1",code:"SUMMER24",name:"Summer 2024",type:"percent",value:5,active:true},
     {id:"r2",code:"KT2025",name:"KT Launch",type:"fixed",value:3000,active:true},
   ],
+  clientPhotos:[],
 };
 
 const USERS = {
@@ -281,11 +285,11 @@ export default function App(){
   const [dbError,setDbError]=useState(null);
   useEffect(()=>{
     setDbLoading(true);
-    Promise.all([DB.getPkgs(), DB.getDiscounts(), DB.getReferrals()])
-      .then(([pkgs,discounts,refs])=>{
+    Promise.all([DB.getPkgs(), DB.getDiscounts(), DB.getReferrals(), DB.getClientPhotos()])
+      .then(([pkgs,discounts,refs,clientPhotos])=>{
         const loadedPkgs = pkgs && pkgs.length > 0 ? pkgs.map(rowToPkg) : null;
         if(!loadedPkgs || loadedPkgs.length===0){INIT.packages.forEach(p=>DB.savePkg(p).catch(()=>{}));}
-        setData(d=>({...d,packages: loadedPkgs || d.packages,discounts: discounts && discounts.length>0 ? discounts : d.discounts,referralCodes: refs && refs.length>0 ? refs.map(r=>({id:r.id,code:r.code,type:r.type,value:r.value})) : d.referralCodes}));
+        setData(d=>({...d,packages: loadedPkgs || d.packages,discounts: discounts && discounts.length>0 ? discounts : d.discounts,referralCodes: refs && refs.length>0 ? refs.map(r=>({id:r.id,code:r.code,type:r.type,value:r.value})) : d.referralCodes, clientPhotos: clientPhotos||[]}));
         setDbLoading(false);
       })
       .catch(err=>{console.warn("Supabase load failed, using local data:", err);setDbError("Using offline data");setDbLoading(false);});
@@ -347,7 +351,7 @@ function AdminPanel({user,data,setData,fxRates,fxError,onLogout}){
   }
   return(
     <Shell user={user} onLogout={onLogout} fxRates={fxRates} rateError={fxError} subtitle="Admin Panel">
-      <TabBar tabs={[{id:"packages",label:"📦 Packages"},{id:"discounts",label:"🏷 Discounts"},{id:"referrals",label:"🎟 Referrals"},{id:"countries",label:"🌍 Countries"}]} active={adminTab} onSelect={setAdminTab}/>
+      <TabBar tabs={[{id:"packages",label:"📦 Packages"},{id:"discounts",label:"🏷 Discounts"},{id:"referrals",label:"🎟 Referrals"},{id:"countries",label:"🌍 Countries"},{id:"clients",label:"📸 Clients"}]} active={adminTab} onSelect={setAdminTab}/>
       {adminTab==="packages"&&<>
         <PT sub="Select country to manage">Packages</PT>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:18}}>
@@ -361,6 +365,7 @@ function AdminPanel({user,data,setData,fxRates,fxError,onLogout}){
       {adminTab==="discounts"&&<DiscountManager data={data} setData={setData}/>}
       {adminTab==="referrals"&&<ReferralManager data={data} setData={setData}/>}
       {adminTab==="countries"&&<CountryMgr data={data} setData={setData}/>}
+      {adminTab==="clients"&&<ClientPhotoMgr data={data} setData={setData}/>}
     </Shell>
   );
 }
@@ -778,6 +783,113 @@ function AddAddonForm({onAdd,countryId,fxRates}){
   </div>;
 }
 
+
+// ── CLIENT PHOTO MANAGER (Admin Panel) ───────────────────────────────────────
+function ClientPhotoMgr({data,setData}){
+  const [newP,setNewP]=useState({
+    id:"",countryId:"th",name:"",location:"",quote:"",stars:5,photo:"",active:true
+  });
+  const [filter,setFilter]=useState("th");
+
+  function add(){
+    if(!newP.photo||!newP.name)return;
+    const p={...newP,id:"cp"+uid()};
+    DB.saveClientPhoto(p).catch(()=>{});
+    setData(d=>({...d,clientPhotos:[...(d.clientPhotos||[]),p]}));
+    setNewP({id:"",countryId:filter,name:"",location:"",quote:"",stars:5,photo:"",active:true});
+  }
+
+  function remove(id){
+    DB.delClientPhoto(id).catch(()=>{});
+    setData(d=>({...d,clientPhotos:(d.clientPhotos||[]).filter(x=>x.id!==id)}));
+  }
+
+  function toggle(id){
+    const updated=(data.clientPhotos||[]).map(x=>x.id===id?{...x,active:!x.active}:x);
+    setData(d=>({...d,clientPhotos:updated}));
+    const p=updated.find(x=>x.id===id);
+    if(p)DB.saveClientPhoto(p).catch(()=>{});
+  }
+
+  const filtered=(data.clientPhotos||[]).filter(p=>p.countryId===filter);
+
+  return(
+    <div>
+      <PT sub="Client travel photos by country">Client Photos</PT>
+      {/* Country filter */}
+      <div style={{display:"flex",gap:7,marginBottom:14,flexWrap:"wrap"}}>
+        {data.countries.map(c=>(
+          <button key={c.id} onClick={()=>{setFilter(c.id);setNewP(x=>({...x,countryId:c.id}));}}
+            style={{background:filter===c.id?B.teal:B.offWhite,color:filter===c.id?"#fff":B.textMid,border:`1.5px solid ${filter===c.id?B.teal:B.border}`,borderRadius:20,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"'Poppins',sans-serif"}}>
+            {c.flag} {c.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Existing photos */}
+      {filtered.length===0&&(
+        <Card><div style={{textAlign:"center",color:B.textLight,padding:20,fontSize:13}}>No client photos for this country yet. Add one below.</div></Card>
+      )}
+      {filtered.map(p=>(
+        <Card key={p.id} accent={p.active?B.teal:B.border}>
+          <div style={{display:"flex",gap:10,marginBottom:10}}>
+            {/* Preview */}
+            {p.photo?(
+              <div style={{width:70,height:90,borderRadius:10,backgroundImage:`url(${p.photo})`,backgroundSize:"cover",backgroundPosition:"center",flexShrink:0,border:`2px solid ${B.border}`}}/>
+            ):(
+              <div style={{width:70,height:90,borderRadius:10,background:B.offWhite,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>📷</div>
+            )}
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:700,color:B.teal,marginBottom:2}}>{p.name||"—"}</div>
+              <div style={{fontSize:11,color:B.textLight,marginBottom:2}}>📍 {p.location||"—"}</div>
+              <div style={{fontSize:11,color:B.textLight,fontStyle:"italic",marginBottom:4}}>"{p.quote||"—"}"</div>
+              <div style={{display:"flex",gap:1}}>
+                {[1,2,3,4,5].map(i=><svg key={i} width="11" height="11" viewBox="0 0 24 24" fill={i<=p.stars?"#F59E0B":"#E5E7EB"} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
+              </div>
+            </div>
+            <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
+              <div onClick={()=>toggle(p.id)} style={{width:40,height:22,borderRadius:11,background:p.active?B.teal:B.border,cursor:"pointer",position:"relative",flexShrink:0}}>
+                <div style={{position:"absolute",top:3,left:p.active?19:3,width:16,height:16,borderRadius:"50%",background:"white",transition:"left .15s"}}/>
+              </div>
+              <DBtn onClick={()=>remove(p.id)}>Del</DBtn>
+            </div>
+          </div>
+          {/* Photo URL input */}
+          <Inp label="PHOTO URL" value={p.photo} onChange={e=>{
+            const updated=(data.clientPhotos||[]).map(x=>x.id===p.id?{...x,photo:e.target.value}:x);
+            setData(d=>({...d,clientPhotos:updated}));
+          }} placeholder="Paste Supabase or image URL"/>
+        </Card>
+      ))}
+
+      {/* Add new */}
+      <Card accent={B.teal}>
+        <SL>ADD CLIENT PHOTO — {data.countries.find(c=>c.id===filter)?.flag} {data.countries.find(c=>c.id===filter)?.name}</SL>
+        {/* Photo URL + preview */}
+        <Inp label="PHOTO URL *" value={newP.photo} onChange={e=>setNewP(x=>({...x,photo:e.target.value}))} placeholder="Paste Supabase URL or any image URL"/>
+        {newP.photo&&(
+          <div style={{width:"100%",height:160,borderRadius:12,backgroundImage:`url(${newP.photo})`,backgroundSize:"cover",backgroundPosition:"center",marginBottom:10,border:`1.5px solid ${B.border}`}}/>
+        )}
+        <Inp label="CLIENT NAME *" value={newP.name} onChange={e=>setNewP(x=>({...x,name:e.target.value}))} placeholder="e.g. Rahul & Family"/>
+        <Inp label="LOCATION / CAPTION" value={newP.location} onChange={e=>setNewP(x=>({...x,location:e.target.value}))} placeholder="e.g. Phi Phi Islands"/>
+        <Inp label="QUOTE" value={newP.quote} onChange={e=>setNewP(x=>({...x,quote:e.target.value}))} placeholder="e.g. Best trip of our lives!"/>
+        {/* Star rating */}
+        <div style={{marginBottom:11}}>
+          <div style={{fontSize:10,color:B.textLight,letterSpacing:2,fontWeight:700,marginBottom:6}}>RATING</div>
+          <div style={{display:"flex",gap:6}}>
+            {[1,2,3,4,5].map(i=>(
+              <div key={i} onClick={()=>setNewP(x=>({...x,stars:i}))} style={{cursor:"pointer"}}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill={i<=newP.stars?"#F59E0B":"#E5E7EB"} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+            ))}
+          </div>
+        </div>
+        <MBtn onClick={add} style={{width:"100%"}}>+ Add Client Photo</MBtn>
+      </Card>
+    </div>
+  );
+}
+
 function CountryMgr({data,setData}){
   const [n,setN]=useState({name:"",flag:"🌍",customId:""});
   return(<div>
@@ -1073,8 +1185,9 @@ const CLIENT_PHOTOS = {
 };
 
 // ── CLIENT PHOTOS MARQUEE ─────────────────────────────────────────────────────
-function ClientPhotosMarquee({countryId}){
-  const all = CLIENT_PHOTOS[countryId] || CLIENT_PHOTOS.th;
+function ClientPhotosMarquee({countryId, clientPhotos}){
+  const adminPhotos=(clientPhotos||[]).filter(p=>p.countryId===countryId&&p.active!==false);
+  const all = adminPhotos.length>0 ? adminPhotos : (CLIENT_PHOTOS[countryId] || CLIENT_PHOTOS.th);
   // Double for seamless infinite loop
   const row1 = [...all, ...all];
   const row2 = [...all.slice(Math.ceil(all.length/2)), ...all.slice(0, Math.ceil(all.length/2)), ...all.slice(Math.ceil(all.length/2)), ...all.slice(0, Math.ceil(all.length/2))];
@@ -1325,7 +1438,7 @@ function ItineraryPage({quote,onBack}){
 
       {/* TESTIMONIALS MARQUEE */}
       <div style={{margin:"6px 10px 0"}}>
-        <ClientPhotosMarquee countryId={pkg?.countryId||"th"}/>
+        <ClientPhotosMarquee countryId={pkg?.countryId||"th"} clientPhotos={quote.clientPhotos}/>
       </div>
       {/* TRUST */}
       <div style={{margin:"8px 12px 0",background:IT.card,borderRadius:12,padding:"14px",border:`1px solid ${IT.border}`,fontFamily:"'Inter',sans-serif"}}>
@@ -1434,24 +1547,21 @@ function ItinDayCard({d,isOpen,onToggle,cardRef,onOpenLightbox}){
 
           {/* TRANSFERS — Thrillophilia style */}
           {(d.transfers||[]).map((t,i)=>(
-            <div key={i} style={{background:"#fff",borderRadius:10,padding:"10px 12px",marginBottom:8,border:`1px solid ${IT.border}`}}>
+            <div key={i} style={{background:"#fff",borderRadius:10,padding:"8px 10px",marginBottom:6,border:`1px solid ${IT.border}`}}>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
                 <Icon.Car size={13} color={IT.orange}/>
-                <span style={{fontSize:11,color:IT.muted}}>Private Transfer:</span>
-                <span style={{fontSize:12,fontWeight:700,color:IT.ink}}>{t.vehicle}</span>
+                <span style={{fontSize:11,fontWeight:700,color:IT.ink}}>{t.vehicle}</span>
+                {t.note&&<span style={{fontSize:10,color:IT.muted,marginLeft:"auto"}}>· {t.note}</span>}
               </div>
-              {t.note&&<div style={{fontSize:11,color:IT.muted,marginBottom:8}}>{t.note}</div>}
-              <div style={{marginBottom:6}}>
-                <div style={{display:"inline-block",background:"#FFF3E0",color:IT.orange,fontSize:10,fontWeight:700,borderRadius:4,padding:"2px 6px",marginBottom:4}}>From</div>
-                <div style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${IT.border}`,borderRadius:8,padding:"7px 10px"}}>
-                  <Icon.MapPin size={11} color={IT.muted}/><span style={{fontSize:13,color:IT.sub}}>{t.from||"—"}</span>
+              <div style={{display:"flex",gap:10,alignItems:"stretch"}}>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",paddingTop:2,flexShrink:0}}>
+                  <div style={{width:9,height:9,borderRadius:"50%",background:IT.orange,flexShrink:0}}/>
+                  <div style={{width:2,flex:1,background:`linear-gradient(to bottom,${IT.orange},${IT.teal})`,minHeight:20,margin:"2px 0"}}/>
+                  <div style={{width:9,height:9,borderRadius:"50%",background:IT.teal,flexShrink:0}}/>
                 </div>
-              </div>
-              <div style={{width:1,height:8,background:IT.border,margin:"0 0 6px 14px"}}/>
-              <div>
-                <div style={{display:"inline-block",background:"#E8F5E9",color:"#2E7D32",fontSize:10,fontWeight:700,borderRadius:4,padding:"2px 6px",marginBottom:4}}>To</div>
-                <div style={{display:"flex",alignItems:"center",gap:8,background:"#fff",border:`1px solid ${IT.border}`,borderRadius:8,padding:"7px 10px"}}>
-                  <Icon.MapPin size={11} color={IT.muted}/><span style={{fontSize:13,color:IT.sub}}>{t.to||"—"}</span>
+                <div style={{flex:1,display:"flex",flexDirection:"column",justifyContent:"space-between",gap:10}}>
+                  <div style={{fontSize:12,color:IT.sub,fontWeight:500}}>{t.from||"—"}</div>
+                  <div style={{fontSize:12,color:IT.teal,fontWeight:600}}>{t.to||"—"}</div>
                 </div>
               </div>
             </div>
@@ -1664,7 +1774,7 @@ function SalesPanel({user,data,fxRates,fxError,onLogout}){
   function reset(){setScreen("country");setCId("");setPkgId("");setPax({adult:2,child_5_11:0,child_2_4:0,infant:0});setClientName("");setSelDiscount("");setAppliedRef(null);setRefInput("");setComplimentary("");setArrivalDate("");}
 
   if(screen==="itinerary") return(
-    <ItineraryPage quote={{pkg,pax,selFlight,selHotel,extraHotelStays,activeIncActs,selAddons,addonQtys,activeTransfers,T,clientName,arrivalDate,defFlight,curFlight,defHotel,curHotel,appliedRef,chosenDiscount,dynDuration,flightExtraAmt,flightExtraLabel}} onBack={()=>setScreen("build")}/>
+    <ItineraryPage quote={{pkg,pax,selFlight,selHotel,extraHotelStays,activeIncActs,selAddons,addonQtys,activeTransfers,T,clientName,arrivalDate,defFlight,curFlight,defHotel,curHotel,appliedRef,chosenDiscount,dynDuration,flightExtraAmt,flightExtraLabel,clientPhotos:data.clientPhotos}} onBack={()=>setScreen("build")}/>
   );
 
   if(screen==="build") return(
