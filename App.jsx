@@ -990,9 +990,113 @@ const itCSS=`
   .it-chevron{transition:transform 0.25s ease;}
   .it-chevron.open{transform:rotate(180deg);}
   @media print{.it-noprint{display:none!important;}}
+  @keyframes marquee-left{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+  @keyframes marquee-right{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
+  .marquee-left{animation:marquee-left 30s linear infinite;}
+  .marquee-right{animation:marquee-right 28s linear infinite;}
+  .marquee-left:hover,.marquee-right:hover{animation-play-state:paused;}
+  .marquee-wrap{overflow:hidden;width:100%;}
 `;
 
 // ── ITINERARY PAGE ────────────────────────────────────────────────────────────
+
+// ── TESTIMONIALS DATA (country-specific) ─────────────────────────────────────
+const TESTIMONIALS = {
+  th: [
+    {name:"Rahul Sharma",city:"Mumbai",quote:"Phuket was absolutely magical! Every detail was perfect.",stars:5,avatar:"https://i.pravatar.cc/80?img=11"},
+    {name:"Priya Nair",city:"Kochi",quote:"Best trip of my life. The Phi Phi islands blew my mind!",stars:5,avatar:"https://i.pravatar.cc/80?img=44"},
+    {name:"Amit Patel",city:"Ahmedabad",quote:"Seamless experience from start to finish. Highly recommend!",stars:5,avatar:"https://i.pravatar.cc/80?img=12"},
+    {name:"Deepa Menon",city:"Bangalore",quote:"Tiger Kingdom was unforgettable. Kids loved every moment.",stars:5,avatar:"https://i.pravatar.cc/80?img=47"},
+    {name:"Vikram Singh",city:"Delhi",quote:"Kairali Trails made our honeymoon absolutely special!",stars:5,avatar:"https://i.pravatar.cc/80?img=15"},
+    {name:"Sneha Iyer",city:"Chennai",quote:"The night street food tour was the highlight of our trip.",stars:5,avatar:"https://i.pravatar.cc/80?img=48"},
+    {name:"Arjun Kumar",city:"Hyderabad",quote:"Professional team, great hotels, flawless transfers.",stars:5,avatar:"https://i.pravatar.cc/80?img=17"},
+    {name:"Meera Pillai",city:"Trivandrum",quote:"Phi Phi island speedboat tour was breathtaking! 10/10",stars:5,avatar:"https://i.pravatar.cc/80?img=49"},
+  ],
+  my: [
+    {name:"Rohan Verma",city:"Pune",quote:"KL city tour was fantastic. Batu Caves was incredible!",stars:5,avatar:"https://i.pravatar.cc/80?img=21"},
+    {name:"Anita Das",city:"Kolkata",quote:"Genting Highland was so cool — literally and figuratively!",stars:5,avatar:"https://i.pravatar.cc/80?img=43"},
+    {name:"Suresh Babu",city:"Vizag",quote:"Malaysia exceeded all our expectations. Amazing value!",stars:5,avatar:"https://i.pravatar.cc/80?img=22"},
+    {name:"Kavitha Rao",city:"Mysore",quote:"The chocolate gallery and night tour were wonderful!",stars:5,avatar:"https://i.pravatar.cc/80?img=46"},
+    {name:"Prasad Nair",city:"Kochi",quote:"Our family trip to KL was perfectly organized. Thank you!",stars:5,avatar:"https://i.pravatar.cc/80?img=25"},
+    {name:"Lakshmi Reddy",city:"Hyderabad",quote:"Best honeymoon destination! KL has so much to offer.",stars:5,avatar:"https://i.pravatar.cc/80?img=50"},
+    {name:"Arun Krishnan",city:"Coimbatore",quote:"Putrajaya photo stop was stunning. Great itinerary!",stars:5,avatar:"https://i.pravatar.cc/80?img=27"},
+    {name:"Divya Mohan",city:"Calicut",quote:"Seamless transfers and amazing hotel. Will book again!",stars:5,avatar:"https://i.pravatar.cc/80?img=45"},
+  ],
+  id: [
+    {name:"Kiran Joshi",city:"Nagpur",quote:"Bali was a dream come true. Kairali made it perfect!",stars:5,avatar:"https://i.pravatar.cc/80?img=31"},
+    {name:"Nandini Shah",city:"Surat",quote:"The rice terraces and temples were breathtaking!",stars:5,avatar:"https://i.pravatar.cc/80?img=42"},
+    {name:"Ravi Teja",city:"Vijayawada",quote:"Indonesia trip was well-organized and memorable.",stars:5,avatar:"https://i.pravatar.cc/80?img=32"},
+    {name:"Pallavi Jain",city:"Indore",quote:"Loved every moment in Bali. Highly recommend Kairali!",stars:5,avatar:"https://i.pravatar.cc/80?img=41"},
+    {name:"Ganesh Patil",city:"Nashik",quote:"Amazing experience! The team was incredibly helpful.",stars:5,avatar:"https://i.pravatar.cc/80?img=35"},
+    {name:"Swati Kulkarni",city:"Aurangabad",quote:"Bali exceeded our expectations on every front!",stars:5,avatar:"https://i.pravatar.cc/80?img=40"},
+  ],
+  sg: [
+    {name:"Harish Nambiar",city:"Thrissur",quote:"Singapore was brilliant — Gardens by Bay was magical!",stars:5,avatar:"https://i.pravatar.cc/80?img=51"},
+    {name:"Rekha Thomas",city:"Ernakulam",quote:"Marina Bay Sands view was stunning. Perfect trip!",stars:5,avatar:"https://i.pravatar.cc/80?img=52"},
+    {name:"Sanjay Menon",city:"Palakkad",quote:"Universal Studios with family was unforgettable!",stars:5,avatar:"https://i.pravatar.cc/80?img=53"},
+    {name:"Geetha Nair",city:"Kozhikode",quote:"Singapore is so clean and organized. Loved every bit!",stars:5,avatar:"https://i.pravatar.cc/80?img=54"},
+    {name:"Ajith Kumar",city:"Kannur",quote:"Best organized trip ever. Kairali Trails is top class!",stars:5,avatar:"https://i.pravatar.cc/80?img=55"},
+    {name:"Bindhu Suresh",city:"Alappuzha",quote:"Sentosa Island was amazing! Kids had a blast!",stars:5,avatar:"https://i.pravatar.cc/80?img=56"},
+  ],
+};
+
+// ── TESTIMONIALS MARQUEE COMPONENT ───────────────────────────────────────────
+function TestimonialsMarquee({countryId}){
+  const all = TESTIMONIALS[countryId] || TESTIMONIALS.th;
+  // Split into two rows
+  const row1 = [...all, ...all]; // doubled for seamless loop
+  const row2 = [...all.slice(Math.floor(all.length/2)), ...all.slice(0,Math.floor(all.length/2)), ...all.slice(Math.floor(all.length/2)), ...all.slice(0,Math.floor(all.length/2))];
+
+  function StarRow(){
+    return <div style={{display:"flex",gap:2,marginBottom:4}}>
+      {[1,2,3,4,5].map(i=><svg key={i} width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
+    </div>;
+  }
+
+  function TestiCard({t}){
+    return(
+      <div style={{background:"#fff",borderRadius:14,padding:"12px 14px",marginRight:10,flexShrink:0,width:200,border:"1px solid #F3F4F6",boxShadow:"0 2px 8px rgba(0,0,0,0.06)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+          <img src={t.avatar} alt={t.name} style={{width:36,height:36,borderRadius:18,objectFit:"cover",flexShrink:0,border:"2px solid #E0F7FA"}}/>
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:"#111827",lineHeight:1.2}}>{t.name}</div>
+            <div style={{fontSize:10,color:"#6B7280"}}>{t.city}</div>
+          </div>
+        </div>
+        <StarRow/>
+        <div style={{fontSize:11,color:"#374151",lineHeight:1.5,fontStyle:"italic"}}>"{t.quote}"</div>
+      </div>
+    );
+  }
+
+  return(
+    <div style={{margin:"6px 0 0",background:"linear-gradient(135deg,#E0F7FA,#E8F5E9)",borderRadius:12,padding:"16px 0 14px",overflow:"hidden",border:"1px solid #E5E7EB"}}>
+      <div style={{padding:"0 14px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{fontSize:14,fontWeight:800,color:"#111827",fontFamily:"'Inter',sans-serif"}}>What Our Clients Say</div>
+          <div style={{fontSize:11,color:"#6B7280",marginTop:2,fontFamily:"'Inter',sans-serif"}}>Real reviews from happy travellers</div>
+        </div>
+        <div style={{display:"flex",gap:1}}>
+          {[1,2,3,4,5].map(i=><svg key={i} width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>)}
+        </div>
+      </div>
+      {/* Row 1 — moves left */}
+      <div className="marquee-wrap" style={{marginBottom:8}}>
+        <div className="marquee-left" style={{display:"flex",width:"max-content",paddingLeft:14}}>
+          {row1.map((t,i)=><TestiCard key={i} t={t}/>)}
+        </div>
+      </div>
+      {/* Row 2 — moves right */}
+      <div className="marquee-wrap">
+        <div className="marquee-right" style={{display:"flex",width:"max-content",paddingLeft:14}}>
+          {row2.map((t,i)=><TestiCard key={i} t={t}/>)}
+        </div>
+      </div>
+      <div style={{padding:"10px 14px 0",textAlign:"center",fontSize:10,color:"#9CA3AF",fontFamily:"'Inter',sans-serif"}}>★ 500+ happy travellers and counting</div>
+    </div>
+  );
+}
+
 function ItineraryPage({quote,onBack}){
   const [openDay,setOpenDay]=useState(0);
   const cardRefs=useRef({});
@@ -1152,6 +1256,10 @@ function ItineraryPage({quote,onBack}){
         <div style={{textAlign:"center",fontStyle:"italic",fontSize:11,color:IT.teal,marginTop:4}}>*Prices inclusive of all taxes</div>
       </div>
 
+      {/* TESTIMONIALS MARQUEE */}
+      <div style={{margin:"6px 10px 0"}}>
+        <TestimonialsMarquee countryId={pkg?.countryId||"th"}/>
+      </div>
       {/* TRUST */}
       <div style={{margin:"8px 12px 0",background:IT.card,borderRadius:12,padding:"14px",border:`1px solid ${IT.border}`,fontFamily:"'Inter',sans-serif"}}>
         <div style={{fontSize:14,fontWeight:700,marginBottom:10}}>Why Kairali Trails</div>
