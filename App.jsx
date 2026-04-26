@@ -30,7 +30,7 @@ const DB={
   delReferral:(id)=>sbFetch(`referral_codes?id=eq.${id}`,{method:"DELETE"}),
   saveQuote:(q)=>sbFetch("quotes",{method:"POST",body:q}).then(r=>r&&r[0]),
   getClientPhotos:()=>sbFetch("client_photos?order=created_at"),
-  saveClientPhoto:(p)=>sbFetch("client_photos",{method:"POST",body:p,params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
+  saveClientPhoto:(p)=>sbFetch("client_photos",{method:"POST",body:{...p,country_id:p.countryId},params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
   delClientPhoto:(id)=>sbFetch(`client_photos?id=eq.${id}`,{method:"DELETE"}),
 };
 
@@ -289,7 +289,7 @@ export default function App(){
       .then(([pkgs,discounts,refs,clientPhotos])=>{
         const loadedPkgs = pkgs && pkgs.length > 0 ? pkgs.map(rowToPkg) : null;
         if(!loadedPkgs || loadedPkgs.length===0){INIT.packages.forEach(p=>DB.savePkg(p).catch(()=>{}));}
-        setData(d=>({...d,packages: loadedPkgs || d.packages,discounts: discounts && discounts.length>0 ? discounts : d.discounts,referralCodes: refs && refs.length>0 ? refs.map(r=>({id:r.id,code:r.code,type:r.type,value:r.value})) : d.referralCodes, clientPhotos: clientPhotos||[]}));
+        setData(d=>({...d,packages: loadedPkgs || d.packages,discounts: discounts && discounts.length>0 ? discounts : d.discounts,referralCodes: refs && refs.length>0 ? refs.map(r=>({id:r.id,code:r.code,type:r.type,value:r.value})) : d.referralCodes, clientPhotos: (clientPhotos||[]).map(p=>({...p,countryId:p.country_id||p.countryId,active:p.active!==false}))}));
         setDbLoading(false);
       })
       .catch(err=>{console.warn("Supabase load failed, using local data:", err);setDbError("Using offline data");setDbLoading(false);});
