@@ -30,7 +30,7 @@ const DB={
   delReferral:(id)=>sbFetch(`referral_codes?id=eq.${id}`,{method:"DELETE"}),
   saveQuote:(q)=>sbFetch("quotes",{method:"POST",body:q}).then(r=>r&&r[0]),
   getClientPhotos:()=>sbFetch("client_photos?order=created_at"),
-  saveClientPhoto:(p)=>sbFetch("client_photos",{method:"POST",body:{...p,country_id:p.countryId},params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
+  saveClientPhoto:(p)=>sbFetch("client_photos",{method:"POST",body:{id:p.id,country_id:p.countryId||p.country_id,name:p.name,location:p.location,quote:p.quote,stars:p.stars||5,photo:p.photo,active:p.active!==false},params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
   delClientPhoto:(id)=>sbFetch(`client_photos?id=eq.${id}`,{method:"DELETE"}),
 };
 
