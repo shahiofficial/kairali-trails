@@ -149,7 +149,6 @@ const INIT = {
     {id:"r1",code:"SUMMER24",name:"Summer 2024",type:"percent",value:5,active:true},
     {id:"r2",code:"KT2025",name:"KT Launch",type:"fixed",value:3000,active:true},
   ],
-  clientPhotos:[],
 };
 
 const USERS = {
@@ -289,7 +288,7 @@ export default function App(){
       .then(([pkgs,discounts,refs,clientPhotos])=>{
         const loadedPkgs = pkgs && pkgs.length > 0 ? pkgs.map(rowToPkg) : null;
         if(!loadedPkgs || loadedPkgs.length===0){INIT.packages.forEach(p=>DB.savePkg(p).catch(()=>{}));}
-        setData(d=>({...d,packages: loadedPkgs || d.packages,discounts: discounts && discounts.length>0 ? discounts : d.discounts,referralCodes: refs && refs.length>0 ? refs.map(r=>({id:r.id,code:r.code,type:r.type,value:r.value})) : d.referralCodes, clientPhotos: (clientPhotos||[]).map(p=>({...p,countryId:p.country_id||p.countryId,active:p.active!==false}))}));
+        setData(d=>({...d,packages: loadedPkgs || d.packages,discounts: discounts && discounts.length>0 ? discounts : d.discounts,referralCodes: refs && refs.length>0 ? refs.map(r=>({id:r.id,code:r.code,type:r.type,value:r.value})) : d.referralCodes, clientPhotos:(clientPhotos||[]).map(p=>({...p,countryId:p.country_id||p.countryId,active:p.active!==false}))}));
         setDbLoading(false);
       })
       .catch(err=>{console.warn("Supabase load failed, using local data:", err);setDbError("Using offline data");setDbLoading(false);});
@@ -783,6 +782,220 @@ function AddAddonForm({onAdd,countryId,fxRates}){
   </div>;
 }
 
+function CountryMgr({data,setData}){
+  const [n,setN]=useState({name:"",flag:"🌍",customId:""});
+  return(<div>
+    <PT sub="Manage destinations">Countries</PT>
+    {data.countries.map(c=>{const cur=COUNTRY_CURRENCY[c.id];return <div key={c.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:B.white,border:`1.5px solid ${B.border}`,borderRadius:13,padding:"11px 13px",marginBottom:7}}>
+      <div style={{display:"flex",alignItems:"center",gap:9}}><span style={{fontSize:22}}>{c.flag}</span><div><div style={{fontSize:13,fontWeight:700}}>{c.name}</div><div style={{fontSize:10,color:B.textLight}}>{cur?`${cur.symbol} ${cur.code} ·`:""} {data.packages.filter(p=>p.countryId===c.id).length} pkg(s)</div></div></div>
+      <DBtn onClick={()=>{if(window.confirm(`Remove ${c.name}?`))setData(d=>({...d,countries:d.countries.filter(x=>x.id!==c.id),packages:d.packages.filter(p=>p.countryId!==c.id)}))}}>Remove</DBtn>
+    </div>;})}
+    <Card accent={B.teal}><SL>ADD COUNTRY</SL>
+      <Inp label="NAME" value={n.name} onChange={e=>setN(x=>({...x,name:e.target.value}))} placeholder="e.g. Singapore"/>
+      <Inp label="FLAG" value={n.flag} onChange={e=>setN(x=>({...x,flag:e.target.value}))} placeholder="🌍"/>
+      <Inp label="COUNTRY ID (th/my/id/sg)" value={n.customId} onChange={e=>setN(x=>({...x,customId:e.target.value.toLowerCase()}))} placeholder="e.g. sg"/>
+      <MBtn onClick={()=>{if(!n.name)return;setData(d=>({...d,countries:[...d.countries,{name:n.name,flag:n.flag,id:n.customId||"c"+uid()}]}));setN({name:"",flag:"🌍",customId:""});}} style={{width:"100%"}}>+ Add Country</MBtn>
+    </Card>
+  </div>);
+}
+
+function HotelPanel({user,data,setData,fxRates,fxError,onLogout}){
+  const [cId,setCId]=useState("");const [pkgId,setPkgId]=useState("");
+  const [hotels,setHotels]=useState([]);const [saved,setSaved]=useState(false);
+  const [newH,setNewH]=useState({name:"",star:3,costPerNightINR:0,markup:0,markupType:"percent",isDynamic:false,isDefault:false});
+  const pkgs=data.packages.filter(p=>p.countryId===cId&&p.isActive);
+  const pkg=data.packages.find(p=>p.id===pkgId);
+  useEffect(()=>{if(pkg)setHotels(JSON.parse(JSON.stringify(pkg.hotels||[])));return()=>{};},[pkgId]);
+  function save(){const updated={...data.packages.find(p=>p.id===pkgId),hotels};setData(d=>({...d,packages:d.packages.map(p=>p.id===pkgId?updated:p)}));DB.savePkg(updated).catch(()=>{});setSaved(true);setTimeout(()=>setSaved(false),2000);}
+  function updH(id,k,v){setHotels(hs=>hs.map(h=>h.id===id?{...h,[k]:["costPerNightINR","markup"].includes(k)?Number(v):v}:h));}
+  function setDef(id){setHotels(hs=>hs.map(h=>({...h,isDefault:h.id===id})));}
+  function addH(){if(!newH.name)return;setHotels(h=>[...h,{...newH,id:"h"+uid()}]);setNewH({name:"",star:3,costPerNightINR:0,markup:0,markupType:"percent",isDynamic:false,isDefault:false});}
+  return(
+    <Shell user={user} onLogout={onLogout} fxRates={fxRates} rateError={fxError} subtitle="Hotel Department">
+      <PT sub="Country → Package → Hotels">Hotel Management</PT>
+      <SL>SELECT COUNTRY</SL><CGrid countries={data.countries} selected={cId} onSelect={id=>{setCId(id);setPkgId("");}}/>
+      {cId&&<><SL>SELECT PACKAGE</SL>
+        {pkgs.map(p=><div key={p.id} onClick={()=>setPkgId(p.id)} style={{background:pkgId===p.id?B.tealLight:B.white,border:`2px solid ${pkgId===p.id?B.teal:B.border}`,borderRadius:13,padding:"12px",marginBottom:7,cursor:"pointer"}}><div style={{fontSize:13,fontWeight:700,color:pkgId===p.id?B.teal:B.text}}>{p.name}</div><div style={{fontSize:11,color:B.textLight}}>{p.duration}</div></div>)}
+        {pkgs.length===0&&<div style={{color:B.textLight,fontSize:13,padding:14,textAlign:"center"}}>No active packages.</div>}
+      </>}
+      {pkg&&<>
+        {hotels.map(h=>{const sell=h.isDynamic&&!h.costPerNightINR?null:sp(h.costPerNightINR,h.markup,h.markupType);return(
+          <Card key={h.id} accent={h.isDefault?B.teal:STAR_COLOR[h.star]}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div><div style={{fontSize:13,fontWeight:700}}>{h.name}{h.isDefault&&<DefBadge/>}</div><div style={{fontSize:11,color:STAR_COLOR[h.star],fontWeight:600}}>{STAR_LABEL[h.star]}{h.isDynamic?" · Update Daily":""}</div>{sell>0&&<div style={{fontSize:11,color:B.teal}}>Sell: {fmtINR(sell)}/night</div>}</div><DBtn onClick={()=>setHotels(hs=>hs.filter(h2=>h2.id!==h.id))}>Remove</DBtn></div>
+            <Inp label="NAME" value={h.name} onChange={e=>updH(h.id,"name",e.target.value)}/>
+            <CurrencyInp label="COST/NIGHT (1 ROOM)" valueINR={h.costPerNightINR} onChange={v=>updH(h.id,"costPerNightINR",v)} countryId={cId} fxRates={fxRates}/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <Inp label="MARKUP" type="number" value={h.markup} onChange={e=>updH(h.id,"markup",e.target.value)}/>
+              <Sel label="TYPE" value={h.markupType} onChange={e=>updH(h.id,"markupType",e.target.value)}><option value="percent">%</option><option value="fixed">Fixed ₹</option></Sel>
+            </div>
+            <Toggle value={h.isDynamic} onChange={()=>updH(h.id,"isDynamic",!h.isDynamic)} label="Daily Rate"/>
+            {!h.isDefault&&<SBtn onClick={()=>setDef(h.id)} style={{width:"100%"}}>Set as Default</SBtn>}
+          </Card>
+        );})}
+        <Card accent={B.teal}><SL>ADD HOTEL</SL>
+          <Inp label="NAME" value={newH.name} onChange={e=>setNewH(h=>({...h,name:e.target.value}))} placeholder="Hotel name"/>
+          <Sel label="STARS" value={newH.star} onChange={e=>setNewH(h=>({...h,star:Number(e.target.value)}))}><option value={3}>3★</option><option value={4}>4★</option><option value={5}>5★/Resort</option></Sel>
+          <CurrencyInp label="COST/NIGHT" valueINR={newH.costPerNightINR} onChange={v=>setNewH(h=>({...h,costPerNightINR:v}))} countryId={cId} fxRates={fxRates}/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <Inp label="MARKUP" type="number" value={newH.markup} onChange={e=>setNewH(h=>({...h,markup:Number(e.target.value)}))}/>
+            <Sel label="TYPE" value={newH.markupType} onChange={e=>setNewH(h=>({...h,markupType:e.target.value}))}><option value="percent">%</option><option value="fixed">Fixed ₹</option></Sel>
+          </div>
+          <Toggle value={newH.isDynamic} onChange={()=>setNewH(h=>({...h,isDynamic:!h.isDynamic}))} label="Daily Rate"/>
+          {!hotels.some(h=>h.isDefault)&&<Toggle value={newH.isDefault} onChange={()=>setNewH(h=>({...h,isDefault:!h.isDefault}))} label="Set as default"/>}
+          <MBtn onClick={addH} style={{width:"100%"}}>+ Add Hotel</MBtn>
+        </Card>
+        <PBtn onClick={save}>{saved?"✓ Saved!":"💾 Save Changes"}</PBtn>
+      </>}
+    </Shell>
+  );
+}
+
+function OpsPanel({user,data,setData,fxRates,fxError,onLogout}){
+  const [cId,setCId]=useState("");const [pkgId,setPkgId]=useState("");
+  const [addons,setAddons]=useState([]);const [saved,setSaved]=useState(false);
+  const [newA,setNewA]=useState({name:"",costINR:0,kidCostINR:0,markup:20,markupType:"percent",hasQty:false,hasKidPrice:false});
+  const pkgs=data.packages.filter(p=>p.countryId===cId&&p.isActive);
+  const pkg=data.packages.find(p=>p.id===pkgId);
+  useEffect(()=>{if(pkg)setAddons(JSON.parse(JSON.stringify(pkg.addons||[])));return()=>{};},[pkgId]);
+  function save(){const updated={...data.packages.find(p=>p.id===pkgId),addons};setData(d=>({...d,packages:d.packages.map(p=>p.id===pkgId?updated:p)}));DB.savePkg(updated).catch(()=>{});setSaved(true);setTimeout(()=>setSaved(false),2000);}
+  function updA(id,k,v){setAddons(as=>as.map(a=>a.id===id?{...a,[k]:["costINR","kidCostINR","markup"].includes(k)?Number(v):v}:a));}
+  function addNew(){if(!newA.name)return;setAddons(a=>[...a,{...newA,id:"a"+uid()}]);setNewA({name:"",costINR:0,kidCostINR:0,markup:20,markupType:"percent",hasQty:false,hasKidPrice:false});}
+  return(
+    <Shell user={user} onLogout={onLogout} fxRates={fxRates} rateError={fxError} subtitle="Operations Executive">
+      <PT sub="Country → Package → Activities">Activity Management</PT>
+      <div style={{background:"#fff8ee",border:`1px solid ${B.orange}33`,borderRadius:11,padding:"10px 13px",marginBottom:14,fontSize:12,color:B.orange,fontWeight:600}}>⚠ Prices confidential — not visible to sales.</div>
+      <SL>SELECT COUNTRY</SL><CGrid countries={data.countries} selected={cId} onSelect={id=>{setCId(id);setPkgId("");}}/>
+      {cId&&<><SL>SELECT PACKAGE</SL>
+        {pkgs.map(p=><div key={p.id} onClick={()=>setPkgId(p.id)} style={{background:pkgId===p.id?"#effffa":B.white,border:`2px solid ${pkgId===p.id?B.mint:B.border}`,borderRadius:13,padding:"12px",marginBottom:7,cursor:"pointer"}}><div style={{fontSize:13,fontWeight:700,color:pkgId===p.id?B.teal:B.text}}>{p.name}</div><div style={{fontSize:11,color:B.textLight}}>{p.duration}</div></div>)}
+        {pkgs.length===0&&<div style={{color:B.textLight,fontSize:13,padding:14,textAlign:"center"}}>No active packages.</div>}
+      </>}
+      {pkg&&<>
+        {addons.map(a=>{const sell=sp(a.costINR,a.markup,a.markupType);const kidSell=a.hasKidPrice?sp(a.kidCostINR||0,a.markup,a.markupType):0;return(
+          <Card key={a.id}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div><div style={{fontSize:13,fontWeight:700}}>{a.name}</div><div style={{fontSize:11,color:B.teal,fontWeight:600}}>Adult: {fmtINR(sell)}{a.hasKidPrice?` · Child: ${fmtINR(kidSell)}`:""}</div></div><DBtn onClick={()=>setAddons(xs=>xs.filter(x=>x.id!==a.id))}>Remove</DBtn></div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <CurrencyInp label="ADULT NET COST" valueINR={a.costINR} onChange={v=>updA(a.id,"costINR",v)} countryId={cId} fxRates={fxRates}/>
+              {a.hasKidPrice&&<CurrencyInp label="CHILD NET COST" valueINR={a.kidCostINR||0} onChange={v=>updA(a.id,"kidCostINR",v)} countryId={cId} fxRates={fxRates}/>}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <Inp label="MARKUP" type="number" value={a.markup} onChange={e=>updA(a.id,"markup",e.target.value)}/>
+              <Sel label="TYPE" value={a.markupType} onChange={e=>updA(a.id,"markupType",e.target.value)}><option value="percent">%</option><option value="fixed">Fixed ₹</option></Sel>
+            </div>
+          </Card>
+        );})}
+        <Card accent={B.teal}><SL>ADD ACTIVITY</SL>
+          <Inp label="NAME" value={newA.name} onChange={e=>setNewA(a=>({...a,name:e.target.value}))} placeholder="Activity name"/>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <CurrencyInp label="ADULT NET COST" valueINR={newA.costINR} onChange={v=>setNewA(a=>({...a,costINR:v}))} countryId={cId} fxRates={fxRates}/>
+            {newA.hasKidPrice&&<CurrencyInp label="CHILD NET COST" valueINR={newA.kidCostINR} onChange={v=>setNewA(a=>({...a,kidCostINR:v}))} countryId={cId} fxRates={fxRates}/>}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+            <Inp label="MARKUP" type="number" value={newA.markup} onChange={e=>setNewA(a=>({...a,markup:Number(e.target.value)}))}/>
+            <Sel label="TYPE" value={newA.markupType} onChange={e=>setNewA(a=>({...a,markupType:e.target.value}))}><option value="percent">%</option><option value="fixed">Fixed ₹</option></Sel>
+          </div>
+          <Toggle value={newA.hasKidPrice} onChange={()=>setNewA(a=>({...a,hasKidPrice:!a.hasKidPrice}))} label="Has child price"/>
+          <Toggle value={newA.hasQty} onChange={()=>setNewA(a=>({...a,hasQty:!a.hasQty}))} label="Qty Selector"/>
+          <MBtn onClick={addNew} style={{width:"100%"}}>+ Add</MBtn>
+        </Card>
+        <PBtn onClick={save}>{saved?"✓ Saved!":"💾 Save Changes"}</PBtn>
+      </>}
+    </Shell>
+  );
+}
+
+// ── DATE HELPERS ──────────────────────────────────────────────────────────────
+function addDays(dateStr, days) {
+  if(!dateStr) return `Day ${days+1}`;
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+function fmtShort(d){if(!d)return "";const dt=typeof d==="string"?new Date(d):d;return dt.toLocaleDateString("en-GB",{day:"2-digit",month:"short"});}
+function fmtYear(d){if(!d)return "";const dt=typeof d==="string"?new Date(d):d;return "'"+String(dt.getFullYear()).slice(2);}
+function formatDate(dateStr) {if(!dateStr) return "";const d = new Date(dateStr);return fmtShort(d)+" "+fmtYear(d);}
+function dateRange(startStr, endDateObj) {if(!startStr) return "";const s = new Date(startStr);const e = endDateObj instanceof Date ? endDateObj : new Date(endDateObj);return fmtShort(s)+" - "+fmtShort(e)+" "+fmtYear(e);}
+
+// ── COUNTRY PHOTOS ────────────────────────────────────────────────────────────
+const COUNTRY_PHOTOS={
+  "th":["https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2109.JPG","https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2110.JPG","https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2111.JPG"],
+  "my":["https://aapbbeqwnnhmhedsgryt.supabase.co/storage/v1/object/public/photos/IMG_2109.JPG"],
+};
+const HERO_PHOTOS=COUNTRY_PHOTOS["th"];
+
+// ── DEFAULT PHUKET ITINERARY ──────────────────────────────────────────────────
+const DEFAULT_PHUKET_ITINERARY = [
+  {id:"d1",title:"Arrival & Explore Nightlife",location:"Phuket",emoji:"✈️",transfers:[{id:"t1",from:"Phuket International Airport",to:"Hotel",vehicle:"SUV or Similar",note:"Meet our representative at 9:30 AM"}],bulletNotes:["Arrive Phuket airport, meet representative at 9:30 AM.","Hotel drop-off. Check-in at 3:00 PM.","Rest till 6:15 PM, leave at 6:30 PM for Patong night walk.","Covers Bangla Road, Patong Beach, Street Food.","Back at hotel by 11:00 PM."],activities:[{id:"ac1",title:"Patong Beach",name:"Patong Beach",description:"",photo:""},{id:"ac2",title:"Night Street Food",name:"Night Street Food",description:"",photo:""}],stay:{name:"Sunshine Patong",checkInTime:"3:00 PM",checkOutTime:"11:00 AM",nights:4,breakfast:true,photo:""},leisure:"",photos:[],textBlocks:[]},
+  {id:"d2",title:"City Tour (Big Buddha, Chalong Temple, Elephant Trekking, Tiger Photo)",location:"Phuket",emoji:"🏛️",transfers:[{id:"t2",from:"Hotel",to:"City Tour Spots",vehicle:"A/C Coach",note:"Pickup at 12:00 PM"}],bulletNotes:["Pickup from hotel at 12:00 PM for city tour — 8 attractions.","Includes Tiger Kingdom — photo with tiger or lion.","Back at hotel at 6:00 PM. Evening free to explore."],activities:[{id:"ac3",title:"Chalong Temple",name:"Chalong Temple",description:"",photo:""},{id:"ac4",title:"Big Buddha",name:"Big Buddha",description:"",photo:""},{id:"ac5",title:"Old Phuket Town",name:"Old Phuket Town",description:"",photo:""},{id:"ac6",title:"Tiger Kingdom",name:"Tiger Kingdom",description:"",photo:""}],stay:null,leisure:"",photos:[],textBlocks:[]},
+  {id:"d3",title:"Phi Phi Island Tour (7 Island Full Day with Buffet Lunch)",location:"Phi Phi Islands",emoji:"🏝️",transfers:[{id:"t3",from:"Hotel",to:"Pier",vehicle:"A/C Coach",note:"Pickup at 7:00 AM"},{id:"t4",from:"Pier",to:"Phi Phi Islands",vehicle:"Speedboat",note:"Depart 9:30 AM — Breakfast included"}],bulletNotes:["Pickup at 7:00 AM for Phi Phi Island tour — 7 islands.","9:00 AM — arrive pier, complimentary breakfast.","9:30 AM — depart by speedboat.","Covers Maya Bay, Viking Cave, Monkey Beach, Khai Island. Lunch included.","Back at hotel by 6:00 PM."],activities:[{id:"ac7",title:"Maya Bay",name:"Maya Bay",description:"",photo:""},{id:"ac8",title:"Monkey Beach",name:"Monkey Beach",description:"",photo:""},{id:"ac9",title:"Snorkeling",name:"Snorkeling",description:"",photo:""},{id:"ac10",title:"Buffet Lunch",name:"Buffet Lunch",description:"",photo:""}],stay:null,leisure:"",photos:[],textBlocks:[]},
+  {id:"d4",title:"Free Day — Explore at Your Own Pace",location:"Phuket",emoji:"🎪",transfers:[],bulletNotes:["Free day unless add-on purchased.","Stay continues as normal if no add-on.","See add-on brochure for details."],activities:[{id:"ac11",title:"James Bond Island",name:"James Bond Island",description:"",photo:""},{id:"ac12",title:"Yona Beach Club",name:"Yona Beach Club",description:"",photo:""},{id:"ac13",title:"Magic Carnival",name:"Magic Carnival",description:"",photo:""}],stay:null,leisure:"Enjoy the day at your own pace ✨",photos:[],textBlocks:[]},
+  {id:"d5",title:"Departure (Dolphin Show & Old Phuket Town)",location:"Airport",emoji:"🛫",transfers:[{id:"t5",from:"Hotel",to:"Phuket International Airport",vehicle:"A/C Vehicle",note:"Pickup from hotel lobby at 1:00 PM"}],bulletNotes:["Check out per hotel standard time.","Pickup at 1:00 PM.","Dolphin Show, Central Phuket Mall, Old Phuket Town.","Drop-off at airport."],activities:[{id:"ac14",title:"Dolphin Show (45 min)",name:"Dolphin Show (45 min)",description:"",photo:""},{id:"ac15",title:"Central Phuket Mall (2 hr)",name:"Central Phuket Mall (2 hr)",description:"",photo:""},{id:"ac16",title:"Old Phuket Town (2 hr)",name:"Old Phuket Town (2 hr)",description:"",photo:""}],stay:null,leisure:"Until the next adventure! Bon Voyage! 🌟",photos:[],textBlocks:[]},
+];
+
+function buildItinerary(quote){
+  const {pkg,arrivalDate,selAddons,addonQtys,extraHotelStays}=quote;
+  if(!pkg) return [];
+  const template=(pkg.itineraryDays&&pkg.itineraryDays.length>0)?pkg.itineraryDays:(pkg.id==="pkg1"?DEFAULT_PHUKET_ITINERARY:[]);
+  if(!template.length) return [];
+  const extraNights=(extraHotelStays||[]).reduce((s,x)=>s+(x.nights||0),0);
+  const FREE_KW=["yona","scuba"];
+  const isFree=a=>FREE_KW.some(k=>a.name.toLowerCase().includes(k));
+  const paidAddons=[];const freeAddons=[];
+  (pkg.addons||[]).forEach(a=>{
+    const sel=a.hasQty?((addonQtys||{})[a.id]||0)>0:(selAddons||[]).includes(a.id);
+    if(!sel)return;
+    const qty=a.hasQty?(addonQtys||{})[a.id]:null;
+    if(isFree(a))freeAddons.push({...a,qty});else paidAddons.push({...a,qty});
+  });
+  const selHotelObj=quote.curHotel||quote.defHotel||(quote.selHotel?(pkg.hotels||[]).find(h=>h.id===quote.selHotel):(pkg.hotels||[]).find(h=>h.isDefault));
+  const hotelName=selHotelObj?.name||"Hotel";
+  const fixed=template.slice(0,3).map((d,i)=>{
+    const mapped={...d,day:i+1,date:arrivalDate?fmtShort(addDays(arrivalDate,i))+" "+fmtYear(addDays(arrivalDate,i)):`Day ${i+1}`};
+    if(i===0&&mapped.transfers){mapped.transfers=mapped.transfers.map(t=>({...t,to:t.to==="Hotel"||t.to==="Sunshine Patong"||t.to==="hotel"?hotelName:t.to}));}
+    if(mapped.stay){mapped.stay={...mapped.stay,name:hotelName,photo:selHotelObj?.photos?.[0]||mapped.stay.photo||""};}
+    if(i===0&&mapped.stay){mapped.stay={...mapped.stay,hotelPhotos:(selHotelObj?.photos||[]).filter(Boolean)};}
+    return mapped;
+  });
+  const totalSlots=1+extraNights;const middleDays=[];
+  for(let i=0;i<totalSlots;i++){
+    const addon=paidAddons[i];const dayNum=4+i;
+    const dateStr=arrivalDate?fmtShort(addDays(arrivalDate,dayNum-1))+" "+fmtYear(addDays(arrivalDate,dayNum-1)):`Day ${dayNum}`;
+    if(addon){
+      const base=DEFAULT_PHUKET_ITINERARY[3]||{};
+      const addOnActivities=[{id:"ao"+i,name:addon.name+(addon.qty?` ×${addon.qty} tickets`:""),duration:"Full Day",ticketIncluded:true,notes:[],photo:"",description:""},...freeAddons.map((fa,fi)=>({id:"fa"+fi,name:fa.name+(fa.qty?` ×${fa.qty}`:``),duration:"Included",ticketIncluded:true,notes:[],photo:"",description:""}))];
+      middleDays.push({...base,id:"addon_"+i,day:dayNum,date:dateStr,title:addon.name+(addon.qty?` ×${addon.qty}`:""),emoji:"🎪",location:"Phuket",transfers:[],activities:addOnActivities,bulletNotes:[`Enjoy ${addon.name} today.`,...freeAddons.map(fa=>`${fa.name} also included.`)],stay:null,leisure:"Enjoy the evening at your own pace ✨"});
+    } else {
+      middleDays.push({id:"free_"+i,day:dayNum,date:dateStr,title:"Free Day — Explore at Your Own Pace",emoji:"🌴",location:"Phuket",transfers:[],bulletNotes:["Today is a free day. Explore Phuket at your own pace.","Visit local markets, beaches, or simply relax at the hotel."],activities:i===0&&paidAddons.length===0?freeAddons.map((fa,fi)=>({id:"fa"+fi,name:fa.name+(fa.qty?` ×${fa.qty}`:``),duration:"Included",ticketIncluded:true,notes:[],photo:"",description:""})):[],stay:null,leisure:"Enjoy the day at leisure ✨",photos:[],textBlocks:[]});
+    }
+  }
+  const deptTemplate=template[template.length-1]||{};const lastDayNum=4+totalSlots;
+  const departure={...deptTemplate,id:"departure",day:lastDayNum,date:arrivalDate?fmtShort(addDays(arrivalDate,lastDayNum-1))+" "+fmtYear(addDays(arrivalDate,lastDayNum-1)):`Day ${lastDayNum}`,title:deptTemplate.title||"Departure",emoji:deptTemplate.emoji||"🛫"};
+  return [...fixed,...middleDays,departure];
+}
+
+// ── ICONS ─────────────────────────────────────────────────────────────────────
+const Icon={
+  ChevronDown:({size=18,color="#6B7280"})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
+  Car:({size=18,color="#6B7280"})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2l2-4h8l2 4h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg>,
+  Bed:({size=18,color="#6B7280"})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>,
+  Ticket:({size=18,color="#6B7280"})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>,
+  MapPin:({size=18,color="#6B7280"})=><svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+  WhatsApp:({size=20,color="#fff"})=><svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>,
+};
+
+// ── ITINERARY THEME ───────────────────────────────────────────────────────────
+const IT = {
+  bg:"#F3F4F6",card:"#FFFFFF",cardAlt:"#F9FAFB",border:"#E5E7EB",ink:"#111827",sub:"#374151",muted:"#6B7280",faint:"#9CA3AF",teal:"#0496a5",tealLight:"#E0F7FA",accentLight:"#E0F7FA",orange:"#F97316",orangeLight:"#FFF7ED",mint:"#24fbaa",green:"#059669",greenBg:"#ECFDF5",red:"#EF4444",redBg:"#FEF2F2",
+  clientPhotos:[],
+};
+
+const itCSS=`
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,400;1,700&display=swap');
+  .it-page *{box-sizing:border-box;}
+  .it-page{font-family:'Inter',sans-serif;background:${IT.bg};color:${IT.ink};}
+  .it-chevron{transition:transform 0.25s ease;}
+  .it-chevron.open{transform:rotate(180deg);}
+  @media print{.it-noprint{display:none!important;}}
+`;
 
 // ── CLIENT PHOTO MANAGER (Admin Panel) ───────────────────────────────────────
 function ClientPhotoMgr({data,setData}){
@@ -929,6 +1142,7 @@ function ClientPhotoMgr({data,setData}){
     </div>
   );
 }
+
 
 
 // ── CLIENT TRAVEL PHOTOS DATA (fallback if no admin photos) ─────────────────
@@ -1259,6 +1473,7 @@ function ItineraryPage({quote,onBack}){
 }
 
 // ── ITINERARY DAY CARD ────────────────────────────────────────────────────────
+
 
 // ── HOTEL PHOTO LIGHTBOX ──────────────────────────────────────────────────────
 function HotelLightbox({photos, startIndex=0, onClose}){
@@ -1687,7 +1902,7 @@ function SalesPanel({user,data,fxRates,fxError,onLogout}){
       </Card>
 
       {/* DISCOUNT & REFERRAL */}
-      <Card accent={B.orange}><SL color={B.orange}>🏷 DISCOUNT & REFERRAL</SL>
+      <Card accent={B.orange}><SL color={B.orange}>🏷 DISCOUNT + REFERRAL</SL>
         <Sel label="APPLY DISCOUNT" value={selDiscount} onChange={e=>setSelDiscount(e.target.value)}>
           <option value="">— No Discount —</option>
           {(data.discounts||[]).map(d=><option key={d.id} value={d.id}>{d.name} ({d.type==="percent"?`${d.value}%`:`₹${d.value}`} off)</option>)}
@@ -1856,7 +2071,7 @@ function InclExclEditor({form, setForm}){
   function delExcl(i){ setForm(f=>({...f,defaultExclusions:(f.defaultExclusions||[]).filter((_,j)=>j!==i)})); }
   return(
     <div>
-      <div style={{background:B.tealLight,borderRadius:11,padding:"10px 13px",marginBottom:14,fontSize:12,color:B.teal,fontWeight:600}}>📋 Set default inclusions & exclusions. Sales selections (hotel, flights, addons) are added automatically.</div>
+      <div style={{background:B.tealLight,borderRadius:11,padding:"10px 13px",marginBottom:14,fontSize:12,color:B.teal,fontWeight:600}}>📋 Set default inclusions + exclusions. Sales selections (hotel, flights, addons) are added automatically.</div>
       <div style={{marginBottom:18}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
           <div style={{fontSize:13,fontWeight:700,color:B.teal}}>✓ Default Inclusions</div>
