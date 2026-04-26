@@ -931,6 +931,42 @@ function ClientPhotoMgr({data,setData}){
 }
 
 
+// ── CLIENT TRAVEL PHOTOS DATA (fallback if no admin photos) ─────────────────
+const CLIENT_PHOTOS = {
+  th: [
+    {name:"Rahul & Family",location:"Phi Phi Islands",quote:"Absolutely magical!",stars:5,photo:"https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=400&q=80"},
+    {name:"Priya Nair",location:"Patong Beach",quote:"Best trip ever!",stars:5,photo:"https://images.unsplash.com/photo-1504214208698-ea1916a2195a?w=400&q=80"},
+    {name:"Amit & Sneha",location:"Big Buddha",quote:"Breathtaking views!",stars:5,photo:"https://images.unsplash.com/photo-1506665531195-3566af2b4dfa?w=400&q=80"},
+    {name:"Deepa Menon",location:"Tiger Kingdom",quote:"Once in a lifetime!",stars:5,photo:"https://images.unsplash.com/photo-1563492065599-3520f775eeed?w=400&q=80"},
+    {name:"Vikram Singh",location:"Maya Bay",quote:"Paradise on earth!",stars:5,photo:"https://images.unsplash.com/photo-1537956965359-7573183d1f57?w=400&q=80"},
+    {name:"Meera & Kids",location:"Phuket Old Town",quote:"Kids loved every moment!",stars:5,photo:"https://images.unsplash.com/photo-1519451241324-20b4ea2c4220?w=400&q=80"},
+    {name:"Arjun Kumar",location:"Bangla Road",quote:"Nightlife was incredible!",stars:5,photo:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80"},
+    {name:"Kavya & Rohan",location:"Speedboat Tour",quote:"Best honeymoon ever!",stars:5,photo:"https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80"},
+  ],
+  my: [
+    {name:"Ravi & Family",location:"Batu Caves",quote:"272 steps worth it!",stars:5,photo:"https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=400&q=80"},
+    {name:"Pallavi Jain",location:"Petronas Towers",quote:"Iconic & stunning!",stars:5,photo:"https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&q=80"},
+    {name:"Kiran & Divya",location:"Genting Highland",quote:"Cool mountain escape!",stars:5,photo:"https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=400&q=80"},
+    {name:"Harish Nambiar",location:"KL Night Tour",quote:"City lights amazing!",stars:5,photo:"https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&q=80"},
+    {name:"Bindhu & Ajith",location:"Putrajaya",quote:"So photogenic!",stars:5,photo:"https://images.unsplash.com/photo-1526666923127-b2970f64b422?w=400&q=80"},
+    {name:"Rekha Thomas",location:"Central Market",quote:"Shopping paradise!",stars:5,photo:"https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&q=80"},
+    {name:"Sanjay & Kids",location:"Chin Swee Temple",quote:"Truly spectacular!",stars:5,photo:"https://images.unsplash.com/photo-1575474600626-1f9e98e3a35b?w=400&q=80"},
+    {name:"Geetha Nair",location:"Bukit Bintang",quote:"Best food street ever!",stars:5,photo:"https://images.unsplash.com/photo-1561622539-bcda43855cf8?w=400&q=80"},
+  ],
+  id: [
+    {name:"Nandini Shah",location:"Rice Terraces",quote:"Surreal landscape!",stars:5,photo:"https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=80"},
+    {name:"Ganesh Patil",location:"Tanah Lot",quote:"Magical sunset!",stars:5,photo:"https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=400&q=80"},
+    {name:"Swati & Raj",location:"Ubud Forest",quote:"Wild & wonderful!",stars:5,photo:"https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=400&q=80"},
+    {name:"Rohan Verma",location:"Kuta Beach",quote:"Surfer paradise!",stars:5,photo:"https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?w=400&q=80"},
+  ],
+  sg: [
+    {name:"Ajith & Family",location:"Gardens by the Bay",quote:"Future meets nature!",stars:5,photo:"https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&q=80"},
+    {name:"Meena Pillai",location:"Marina Bay Sands",quote:"Infinity pool was epic!",stars:5,photo:"https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=400&q=80"},
+    {name:"Suresh & Kids",location:"Universal Studios",quote:"Kids went crazy!",stars:5,photo:"https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&q=80"},
+    {name:"Preethi Nair",location:"Sentosa Island",quote:"Beach + theme park!",stars:5,photo:"https://images.unsplash.com/photo-1519451241324-20b4ea2c4220?w=400&q=80"},
+  ],
+};
+
 // ── CLIENT PHOTOS MARQUEE ─────────────────────────────────────────────────────
 function ClientPhotosMarquee({countryId, clientPhotos}){
   const adminPhotos=(clientPhotos||[]).filter(p=>p.countryId===countryId&&p.active!==false);
