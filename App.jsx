@@ -995,6 +995,12 @@ const itCSS=`
   .it-chevron{transition:transform 0.25s ease;}
   .it-chevron.open{transform:rotate(180deg);}
   @media print{.it-noprint{display:none!important;}}
+  @keyframes marquee-left{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+  @keyframes marquee-right{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
+  .marquee-left{display:flex;animation:marquee-left 40s linear infinite;will-change:transform;-webkit-animation:marquee-left 40s linear infinite;}
+  .marquee-right{display:flex;animation:marquee-right 45s linear infinite;will-change:transform;-webkit-animation:marquee-right 45s linear infinite;}
+  .marquee-left:hover,.marquee-right:hover{animation-play-state:paused;-webkit-animation-play-state:paused;}
+  .marquee-wrap{overflow:hidden;width:100%;display:flex;}
 `;
 
 // ── CLIENT PHOTO MANAGER (Admin Panel) ───────────────────────────────────────
@@ -1011,7 +1017,7 @@ function ClientPhotoMgr({data,setData}){
     setSaving(true);
     const toSave=(data.clientPhotos||[]).filter(p=>p.countryId===filter);
     try{
-      await Promise.all(toSave.map(p=>DB.saveClientPhoto(p).catch(e=>console.warn(e))));
+      await Promise.all(toSave.map(p=>DB.saveClientPhoto(p).then(r=>{if(!r)console.warn('Save failed for',p.id);return r;}).catch(e=>console.warn('Save error:',e,p))));
       setSaved(true);
       setTimeout(()=>setSaved(false),2500);
     }catch(e){console.warn(e);}
@@ -1039,7 +1045,11 @@ function ClientPhotoMgr({data,setData}){
   }
 
   function updField(id,field,val){
-    setData(d=>({...d,clientPhotos:(d.clientPhotos||[]).map(x=>x.id===id?{...x,[field]:val}:x)}));
+    const updated=(data.clientPhotos||[]).map(x=>x.id===id?{...x,[field]:val}:x);
+    setData(d=>({...d,clientPhotos:updated}));
+    // Auto-save to Supabase after every field change
+    const p=updated.find(x=>x.id===id);
+    if(p) DB.saveClientPhoto(p).catch(e=>console.warn("Save failed:",e));
   }
 
   const filtered=(data.clientPhotos||[]).filter(p=>p.countryId===filter);
