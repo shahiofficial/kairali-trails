@@ -30,6 +30,9 @@ const DB={
   delReferral:(id)=>sbFetch(`referral_codes?id=eq.${id}`,{method:"DELETE"}),
   saveQuote:(q)=>sbFetch("quotes",{method:"POST",body:q}).then(r=>r&&r[0]),
   getClientPhotos:()=>sbFetch("client_photos?order=created_at"),
+  getCustomTrips:()=>sbFetch("custom_trips?order=created_at.desc"),
+  saveCustomTrip:(t)=>sbFetch("custom_trips",{method:"POST",body:{id:t.id,title:t.title,client_name:t.clientName,pax:JSON.stringify(t.pax),segments:JSON.stringify(t.segments),inter_flights:JSON.stringify(t.interFlights),total:t.total,arrival_date:t.arrivalDate,created_by:t.createdBy||"sales"},params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
+  delCustomTrip:(id)=>sbFetch(`custom_trips?id=eq.${id}`,{method:"DELETE"}),
   saveClientPhoto:(p)=>sbFetch("client_photos",{method:"POST",body:{id:p.id,country_id:p.countryId||p.country_id,name:p.name,location:p.location,quote:p.quote,stars:p.stars||5,photo:p.photo,active:p.active!==false},params:{on_conflict:"id"},upsert:true}).then(r=>r&&r[0]),
   delClientPhoto:(id)=>sbFetch(`client_photos?id=eq.${id}`,{method:"DELETE"}),
 };
@@ -284,11 +287,11 @@ export default function App(){
   const [dbError,setDbError]=useState(null);
   useEffect(()=>{
     setDbLoading(true);
-    Promise.all([DB.getPkgs(), DB.getDiscounts(), DB.getReferrals(), DB.getClientPhotos()])
-      .then(([pkgs,discounts,refs,clientPhotos])=>{
+    Promise.all([DB.getPkgs(), DB.getDiscounts(), DB.getReferrals(), DB.getClientPhotos(), DB.getCustomTrips()])
+      .then(([pkgs,discounts,refs,clientPhotos,customTrips])=>{
         const loadedPkgs = pkgs && pkgs.length > 0 ? pkgs.map(rowToPkg) : null;
         if(!loadedPkgs || loadedPkgs.length===0){INIT.packages.forEach(p=>DB.savePkg(p).catch(()=>{}));}
-        setData(d=>({...d,packages: loadedPkgs || d.packages,discounts: discounts && discounts.length>0 ? discounts : d.discounts,referralCodes: refs && refs.length>0 ? refs.map(r=>({id:r.id,code:r.code,type:r.type,value:r.value})) : d.referralCodes, clientPhotos:(clientPhotos||[]).map(p=>({...p,countryId:p.country_id||p.countryId,active:p.active!==false}))}));
+        setData(d=>({...d,packages: loadedPkgs || d.packages,discounts: discounts && discounts.length>0 ? discounts : d.discounts,referralCodes: refs && refs.length>0 ? refs.map(r=>({id:r.id,code:r.code,type:r.type,value:r.value})) : d.referralCodes, clientPhotos:(clientPhotos||[]).map(p=>({...p,countryId:p.country_id||p.countryId,active:p.active!==false})),customTrips:(customTrips||[]).map(t=>({...t,clientName:t.client_name,pax:typeof t.pax==="string"?JSON.parse(t.pax):t.pax,segments:typeof t.segments==="string"?JSON.parse(t.segments):t.segments,interFlights:typeof t.inter_flights==="string"?JSON.parse(t.inter_flights):t.inter_flights}))}));
         setDbLoading(false);
       })
       .catch(err=>{console.warn("Supabase load failed, using local data:", err);setDbError("Using offline data");setDbLoading(false);});
@@ -986,6 +989,7 @@ const Icon={
 const IT = {
   bg:"#F3F4F6",card:"#FFFFFF",cardAlt:"#F9FAFB",border:"#E5E7EB",ink:"#111827",sub:"#374151",muted:"#6B7280",faint:"#9CA3AF",teal:"#0496a5",tealLight:"#E0F7FA",accentLight:"#E0F7FA",orange:"#F97316",orangeLight:"#FFF7ED",mint:"#24fbaa",green:"#059669",greenBg:"#ECFDF5",red:"#EF4444",redBg:"#FEF2F2",
   clientPhotos:[],
+  customTrips:[],
 };
 
 const itCSS=`
@@ -1690,7 +1694,7 @@ function ItinDayCard({d,isOpen,onToggle,cardRef,onOpenLightbox}){
 }
 
 // ── SALES PANEL ───────────────────────────────────────────────────────────────
-function SalesPanel({user,data,fxRates,fxError,onLogout}){
+function SalesPanel({user,data,setData,fxRates,fxError,onLogout}){
   const [screen,setScreen]=useState("country");
   const [cId,setCId]=useState("");
   const [pkgId,setPkgId]=useState("");
@@ -1781,6 +1785,9 @@ function SalesPanel({user,data,fxRates,fxError,onLogout}){
 
   function reset(){setScreen("country");setCId("");setPkgId("");setPax({adult:2,child_5_11:0,child_2_4:0,infant:0});setClientName("");setSelDiscount("");setAppliedRef(null);setRefInput("");setComplimentary("");setArrivalDate("");}
 
+  if(screen==="customTrip") return(
+    <CustomTripPanel user={user} data={data} setData={setData} fxRates={fxRates} fxError={fxError} onLogout={onLogout}/>
+  );
   if(screen==="itinerary") return(
     <ItineraryPage quote={{pkg,pax,selFlight,selHotel,extraHotelStays,activeIncActs,selAddons,addonQtys,activeTransfers,T,clientName,arrivalDate,defFlight,curFlight,defHotel,curHotel,appliedRef,chosenDiscount,dynDuration,flightExtraAmt,flightExtraLabel,clientPhotos:data.clientPhotos}} onBack={()=>setScreen("build")}/>
   );
@@ -1990,6 +1997,15 @@ function SalesPanel({user,data,fxRates,fxError,onLogout}){
         <div style={{fontWeight:800,fontSize:19,color:"#fff",marginBottom:2}}>Build a Quote</div>
         <div style={{fontSize:12,color:"rgba(255,255,255,0.7)"}}>Select destination to get started</div>
       </div>
+      {/* Custom Multi-Destination Trip Button */}
+      <div onClick={()=>setScreen("customTrip")} style={{background:`linear-gradient(135deg,${B.orange},#f97316)`,borderRadius:16,padding:"16px",marginBottom:12,cursor:"pointer",display:"flex",alignItems:"center",gap:12,boxShadow:"0 4px 16px rgba(243,121,42,0.3)"}}>
+        <div style={{width:44,height:44,borderRadius:12,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>✈️🌏</div>
+        <div>
+          <div style={{fontSize:15,fontWeight:800,color:"#fff",marginBottom:2}}>Custom Multi-Destination</div>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.8)"}}>Build KUL+HKT, BKK+SIN or any combo</div>
+        </div>
+        <div style={{marginLeft:"auto",color:"rgba(255,255,255,0.8)",fontSize:20}}>›</div>
+      </div>
       <SL>CHOOSE DESTINATION</SL>
       {data.countries.map(c=>{const cnt=data.packages.filter(p=>p.countryId===c.id&&p.isActive).length;return <div key={c.id} onClick={()=>{setCId(c.id);setScreen("package");}} style={{background:B.white,border:`2px solid ${B.border}`,borderRadius:14,padding:"14px 16px",marginBottom:9,cursor:"pointer",display:"flex",alignItems:"center",gap:12}}>
         <span style={{fontSize:36}}>{c.flag}</span>
@@ -2109,6 +2125,590 @@ function InclExclEditor({form, setForm}){
             <button onClick={()=>delExcl(i)} style={{background:"none",border:"none",color:B.orange,fontSize:16,cursor:"pointer"}}>✕</button>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ── CUSTOM MULTI-DESTINATION TRIP ────────────────────────────────────────────
+
+function buildCustomItinerary(segments, interFlights, arrivalDate) {
+  const days = [];
+  let dayNum = 1;
+  const CITY_NAMES = {th:"Phuket",my:"Kuala Lumpur",id:"Bali",sg:"Singapore"};
+  const AIRPORT_NAMES = {th:"Phuket International Airport",my:"KL International Airport",id:"Ngurah Rai Airport",sg:"Changi Airport"};
+
+  segments.forEach((seg, si) => {
+    const isLast = si === segments.length - 1;
+    const city = CITY_NAMES[seg.countryId] || seg.countryName;
+    const airport = AIRPORT_NAMES[seg.countryId] || "Airport";
+    const nextSeg = segments[si + 1];
+    const nextCity = nextSeg ? (CITY_NAMES[nextSeg.countryId] || nextSeg.countryName) : null;
+    const interFlight = interFlights[si]; // flight after this segment
+
+    for (let n = 0; n < seg.nights; n++) {
+      const isFirstDay = n === 0;
+      const isLastDay = n === seg.nights - 1;
+      const date = arrivalDate ? (() => {
+        const d = new Date(arrivalDate);
+        d.setDate(d.getDate() + dayNum - 1);
+        return d.toLocaleDateString("en-GB", {day:"2-digit", month:"short"}) + " '" + String(d.getFullYear()).slice(2);
+      })() : `Day ${dayNum}`;
+
+      // Activities for this day
+      const dayActivities = seg.dayActivities?.[n] || [];
+      const transfers = isFirstDay
+        ? [{from: airport, to: seg.hotelName || "Hotel", vehicle: "A/C Coach", note: "Airport Pickup"}]
+        : isLastDay && nextCity
+        ? [{from: seg.hotelName || "Hotel", to: `${nextCity} Airport`, vehicle: "A/C Coach", note: `Transfer for flight to ${nextCity}`}]
+        : [];
+
+      // Auto-generate title
+      let title = "";
+      if (isFirstDay && si === 0) title = `Arrival in ${city} · Check-in · ${dayActivities[0]?.name || "Explore"}`;
+      else if (isLastDay && nextCity) title = `${dayActivities.map(a=>a.name).join(" · ")||"Leisure"} · Evening Flight to ${nextCity}`;
+      else if (isLastDay && isLast) title = `Check-out · Airport Transfer · Departure`;
+      else title = dayActivities.length > 0 ? dayActivities.map(a => a.name).join(" · ") : `Free Day — ${city}`;
+
+      // Bullet notes
+      const bullets = [];
+      if (isFirstDay) bullets.push(`Arrive at ${airport}, met by our representative.`);
+      if (isFirstDay) bullets.push(`Check-in at ${seg.hotelName||"hotel"}. Freshen up.`);
+      dayActivities.forEach(a => bullets.push(`${a.name}${a.note ? " — " + a.note : ""}.`));
+      if (isLastDay && nextCity) {
+        bullets.push(`Evening transfer to airport for flight to ${nextCity}.`);
+        if (interFlight) bullets.push(`Flight: ${interFlight.name} (${fmtINR(interFlight.cost)}).`);
+      }
+      if (isLastDay && isLast) bullets.push("Transfer to airport. Safe travels! Bon Voyage! 🌟");
+
+      days.push({
+        id: `d${dayNum}`,
+        day: dayNum,
+        date,
+        title,
+        emoji: isFirstDay ? "✈️" : isLastDay && isLast ? "🛫" : isLastDay && nextCity ? "🔄" : "📍",
+        location: city,
+        transfers,
+        bulletNotes: bullets,
+        activities: dayActivities,
+        stay: isLastDay && isLast ? null : {
+          name: seg.hotelName || "Hotel",
+          checkInTime: "3:00 PM",
+          checkOutTime: "11:00 AM",
+          nights: 1,
+          breakfast: seg.breakfast !== false,
+          photo: seg.hotelPhoto || "",
+          hotelPhotos: seg.hotelPhotos || [],
+        },
+        leisure: isLastDay && isLast ? "Until the next adventure! 🌟" : "",
+        photos: [],
+        textBlocks: [],
+      });
+      dayNum++;
+    }
+
+    // Add inter-country flight day if not last segment
+    if (!isLast && nextCity && interFlight) {
+      // flight day is merged into last day of segment above
+    }
+  });
+
+  return days;
+}
+
+function CustomTripPanel({user, data, setData, fxRates, fxError, onLogout}) {
+  const [screen, setScreen] = useState("list"); // list | build | itinerary
+  const [editTrip, setEditTrip] = useState(null);
+  const [viewTrip, setViewTrip] = useState(null);
+
+  function newTrip() {
+    setEditTrip({
+      id: "ct" + uid(),
+      title: "",
+      clientName: "",
+      arrivalDate: "",
+      pax: {adult:2, child_5_11:0, child_2_4:0, infant:0},
+      segments: [],
+      interFlights: [],
+      total: 0,
+      createdBy: user.username,
+    });
+    setScreen("build");
+  }
+
+  function saveTrip(trip) {
+    const exists = (data.customTrips||[]).find(t=>t.id===trip.id);
+    setData(d=>({...d, customTrips: exists
+      ? d.customTrips.map(t=>t.id===trip.id?trip:t)
+      : [...(d.customTrips||[]), trip]
+    }));
+    DB.saveCustomTrip(trip).catch(e=>console.warn("Save failed:",e));
+    setScreen("list");
+  }
+
+  function deleteTrip(id) {
+    if(!window.confirm("Delete this trip?")) return;
+    setData(d=>({...d, customTrips:(d.customTrips||[]).filter(t=>t.id!==id)}));
+    DB.delCustomTrip(id).catch(()=>{});
+  }
+
+  const trips = data.customTrips || [];
+
+  if(screen==="itinerary" && viewTrip) {
+    const days = buildCustomItinerary(viewTrip.segments, viewTrip.interFlights||[], viewTrip.arrivalDate);
+    return <CustomItineraryView trip={viewTrip} days={days} onBack={()=>setScreen("list")} onEdit={()=>{setEditTrip(viewTrip);setScreen("build");}} data={data}/>;
+  }
+
+  if(screen==="build" && editTrip) {
+    return <CustomTripBuilder trip={editTrip} setTrip={setEditTrip} data={data} fxRates={fxRates}
+      onSave={saveTrip} onBack={()=>setScreen("list")} user={user} onLogout={onLogout} fxRates={fxRates} fxError={fxError}/>;
+  }
+
+  return (
+    <Shell user={user} onLogout={onLogout} fxRates={fxRates} rateError={fxError} subtitle="Custom Trips" onBack={()=>{}}>
+      <PT sub="Multi-destination custom packages">Custom Trips</PT>
+      <PBtn onClick={newTrip} style={{marginBottom:14}}>+ New Custom Trip</PBtn>
+      {trips.length===0&&<Card><div style={{textAlign:"center",color:B.textLight,padding:20,fontSize:13}}>No custom trips yet. Create your first one!</div></Card>}
+      {trips.map(t=>{
+        const segNames = (t.segments||[]).map(s=>(s.countryId||"").toUpperCase()).join(" + ");
+        const totalNights = (t.segments||[]).reduce((s,x)=>s+(x.nights||0),0);
+        return(
+          <Card key={t.id} accent={B.orange}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:14,fontWeight:800,color:B.orange,marginBottom:2}}>{t.title||`${segNames} Custom Trip`}</div>
+                <div style={{fontSize:12,color:B.textLight,marginBottom:4}}>{segNames} · {totalNights}N / {totalNights+1}D</div>
+                <div style={{fontSize:12,color:B.teal,fontWeight:700}}>{fmtINR(t.total||0)}</div>
+                {t.clientName&&<div style={{fontSize:11,color:B.textLight,marginTop:2}}>👤 {t.clientName}</div>}
+              </div>
+              <div style={{display:"flex",gap:6}}>
+                <SBtn onClick={()=>{setViewTrip(t);setScreen("itinerary");}}>View</SBtn>
+                <SBtn onClick={()=>{setEditTrip({...t,clientName:"",arrivalDate:""});setScreen("build");}}>Clone</SBtn>
+                <DBtn onClick={()=>deleteTrip(t.id)}>Del</DBtn>
+              </div>
+            </div>
+          </Card>
+        );
+      })}
+    </Shell>
+  );
+}
+
+function CustomTripBuilder({trip, setTrip, data, onSave, onBack, user, onLogout, fxRates, fxError}) {
+  const [tab, setTab] = useState("basics");
+
+  function sf(field, val) { setTrip(t=>({...t,[field]:val})); }
+
+  function addSegment() {
+    const newSeg = {id:"seg"+uid(), countryId:"th", countryName:"Thailand", hotelId:"", hotelName:"", hotelPhoto:"", hotelPhotos:[], nights:2, breakfast:true, transfers:[], activities:[], dayActivities:[], cost:0};
+    setTrip(t=>({...t, segments:[...(t.segments||[]),newSeg]}));
+  }
+
+  function updateSeg(id, field, val) {
+    setTrip(t=>({...t, segments:t.segments.map(s=>s.id===id?{...s,[field]:val}:s)}));
+  }
+
+  function removeSeg(id) {
+    setTrip(t=>({...t, segments:t.segments.filter(s=>s.id!==id)}));
+  }
+
+  function addInterFlight(afterIdx) {
+    const flights = [...(trip.interFlights||[])];
+    flights[afterIdx] = {name:"", cost:0};
+    setTrip(t=>({...t, interFlights:flights}));
+  }
+
+  function updateFlight(idx, field, val) {
+    const flights = [...(trip.interFlights||[])];
+    flights[idx] = {...(flights[idx]||{}), [field]:field==="cost"?Number(val):val};
+    setTrip(t=>({...t, interFlights:flights}));
+  }
+
+  // Calculate total
+  function calcTotal() {
+    if(!trip.segments) return 0;
+    let base = PAX_KEYS.reduce((s,k)=>s+(trip.pax?.[k]||0)*0,0); // no base price for custom
+    let total = 0;
+    const adults = trip.pax?.adult||0;
+    const kids = (trip.pax?.child_5_11||0)+(trip.pax?.child_2_4||0);
+    const payingPax = adults+kids;
+
+    trip.segments.forEach(seg=>{
+      // Hotel cost
+      const pkg = data.packages.find(p=>p.countryId===seg.countryId);
+      const hotel = pkg?.hotels?.find(h=>h.id===seg.hotelId);
+      if(hotel && seg.nights) total += sp(hotel.costPerNightINR,hotel.markup,hotel.markupType)*seg.nights;
+      // Transfers
+      (seg.transfers||[]).forEach(t=>{
+        const transfer = pkg?.transfers?.find(x=>x.id===t);
+        if(transfer) total += Math.ceil((transfer.costPerVanINR||0)/Math.max(payingPax,1))*payingPax;
+      });
+      // Activities
+      (seg.activities||[]).forEach(aId=>{
+        const pkg2 = data.packages.find(p=>p.countryId===seg.countryId);
+        const act = pkg2?.includedActivities?.find(a=>a.id===aId) || pkg2?.addons?.find(a=>a.id===aId);
+        if(act){
+          const adultCost = act.costPerPaxINR || sp(act.costINR||0,act.markup||0,act.markupType||"percent");
+          const kidCost = act.kidCostPerPaxINR || (act.hasKidPrice?sp(act.kidCostINR||0,act.markup||0,act.markupType||"percent"):adultCost);
+          total += adultCost*adults + kidCost*kids;
+        }
+      });
+    });
+    // Inter flights
+    (trip.interFlights||[]).forEach(f=>{ if(f?.cost) total += f.cost*(adults+kids+(trip.pax?.infant||0)); });
+    const gst = Math.round(total*0.05);
+    const tcs = Math.round(total*0.02);
+    return total+gst+tcs;
+  }
+
+  const total = calcTotal();
+
+  // Auto title
+  function autoTitle() {
+    const segs = (trip.segments||[]).map(s=>{
+      const names = {th:"HKT",my:"KUL",id:"DPS",sg:"SIN"};
+      return names[s.countryId]||s.countryId?.toUpperCase()||"?";
+    }).join(" + ");
+    const nights = (trip.segments||[]).reduce((s,x)=>s+(x.nights||0),0);
+    return segs ? `${segs} — ${nights+1}D / ${nights}N` : "";
+  }
+
+  const tabs = [{id:"basics",label:"📋 Basics"},{id:"segments",label:"🌏 Segments"},{id:"pricing",label:"💰 Summary"}];
+
+  return(
+    <Shell user={user} onLogout={onLogout} fxRates={fxRates} rateError={fxError} subtitle="Custom Trip Builder" onBack={onBack}>
+      <PT sub="Multi-destination package">Custom Trip</PT>
+      <TabBar tabs={tabs} active={tab} onSelect={setTab}/>
+
+      {tab==="basics"&&<div>
+        <Inp label="CLIENT NAME" value={trip.clientName||""} onChange={e=>sf("clientName",e.target.value)} placeholder="e.g. Rahul & Family"/>
+        <Inp label="TRIP TITLE (auto-generated if blank)" value={trip.title||""} onChange={e=>sf("title",e.target.value)} placeholder={autoTitle()||"e.g. KUL + HKT — 6D / 5N"}/>
+        <RangePicker arrivalDate={trip.arrivalDate||""} setArrivalDate={v=>sf("arrivalDate",v)} totalNights={(trip.segments||[]).reduce((s,x)=>s+(x.nights||0),0)}/>
+        <Card accent={B.blue}><SL color={B.blue}>👥 TRAVELLERS</SL>
+          {PAX_KEYS.map(k=>(
+            <div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:10,marginBottom:10,borderBottom:k!=="infant"?`1px solid ${B.border}`:"none"}}>
+              <div><div style={{fontSize:14,fontWeight:600}}>{PAX_ICONS[k]} {PAX_LABELS[k]}</div></div>
+              <Counter value={trip.pax?.[k]||0} onDec={()=>sf("pax",{...trip.pax,[k]:Math.max(0,(trip.pax?.[k]||0)-1)})} onInc={()=>sf("pax",{...trip.pax,[k]:(trip.pax?.[k]||0)+1})}/>
+            </div>
+          ))}
+        </Card>
+      </div>}
+
+      {tab==="segments"&&<div>
+        <div style={{background:B.tealLight,borderRadius:11,padding:"10px 13px",marginBottom:12,fontSize:12,color:B.teal,fontWeight:600}}>
+          🌏 Add countries in order. Add inter-country flight between each segment.
+        </div>
+        {(trip.segments||[]).length===0&&<Card><div style={{textAlign:"center",color:B.textLight,padding:20}}>No segments yet. Add a country below.</div></Card>}
+
+        {(trip.segments||[]).map((seg,si)=>{
+          const pkg = data.packages.find(p=>p.countryId===seg.countryId);
+          const allActivities = [...(pkg?.includedActivities||[]), ...(pkg?.addons||[])];
+
+          return(<div key={seg.id}>
+            <Card accent={B.orange}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div style={{fontSize:14,fontWeight:800,color:B.orange}}>Segment {si+1} — {seg.countryName}</div>
+                <DBtn onClick={()=>removeSeg(seg.id)}>Remove</DBtn>
+              </div>
+
+              {/* Country picker */}
+              <Sel label="COUNTRY" value={seg.countryId} onChange={e=>{
+                const c = data.countries.find(x=>x.id===e.target.value);
+                updateSeg(seg.id,"countryId",e.target.value);
+                updateSeg(seg.id,"countryName",c?.name||"");
+                updateSeg(seg.id,"hotelId","");
+                updateSeg(seg.id,"hotelName","");
+                updateSeg(seg.id,"activities",[]);
+                updateSeg(seg.id,"transfers",[]);
+              }}>
+                {data.countries.map(c=><option key={c.id} value={c.id}>{c.flag} {c.name}</option>)}
+              </Sel>
+
+              {/* Nights */}
+              <div style={{marginBottom:11}}>
+                <div style={{fontSize:10,color:B.textLight,letterSpacing:2,fontWeight:700,marginBottom:6}}>NIGHTS</div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <Counter value={seg.nights||1} onDec={()=>updateSeg(seg.id,"nights",Math.max(1,(seg.nights||1)-1))} onInc={()=>updateSeg(seg.id,"nights",(seg.nights||1)+1)} min={1} max={14}/>
+                  <span style={{fontSize:12,color:B.textLight}}>{seg.nights||1} night{(seg.nights||1)!==1?"s":""} · {(seg.nights||1)+1} days</span>
+                </div>
+              </div>
+
+              {/* Hotel picker */}
+              <Sel label="HOTEL" value={seg.hotelId||""} onChange={e=>{
+                const h = pkg?.hotels?.find(x=>x.id===e.target.value);
+                updateSeg(seg.id,"hotelId",e.target.value);
+                updateSeg(seg.id,"hotelName",h?.name||"");
+                updateSeg(seg.id,"hotelPhoto",h?.photos?.[0]||"");
+                updateSeg(seg.id,"hotelPhotos",h?.photos||[]);
+                updateSeg(seg.id,"breakfast",h?.breakfast!==false);
+              }}>
+                <option value="">— Select Hotel —</option>
+                {(pkg?.hotels||[]).map(h=><option key={h.id} value={h.id}>{h.name} ({STAR_LABEL[h.star]}) · {fmtINR(sp(h.costPerNightINR,h.markup,h.markupType))}/night</option>)}
+              </Sel>
+              {seg.hotelId&&<div style={{fontSize:11,color:B.teal,fontWeight:600,marginBottom:10,marginTop:-6}}>
+                Total: {fmtINR(sp((pkg?.hotels?.find(h=>h.id===seg.hotelId)?.costPerNightINR||0),(pkg?.hotels?.find(h=>h.id===seg.hotelId)?.markup||0),(pkg?.hotels?.find(h=>h.id===seg.hotelId)?.markupType||"percent"))*(seg.nights||1))} for {seg.nights} nights
+              </div>}
+
+              {/* Transfers */}
+              <div style={{marginBottom:10}}>
+                <SL>🚌 TRANSFERS</SL>
+                {(pkg?.transfers||[]).map(t=>{
+                  const on=(seg.transfers||[]).includes(t.id);
+                  return<div key={t.id} onClick={()=>updateSeg(seg.id,"transfers",on?(seg.transfers||[]).filter(x=>x!==t.id):[...(seg.transfers||[]),t.id])}
+                    style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"9px 11px",borderRadius:10,border:`2px solid ${on?B.teal:B.border}`,background:on?B.tealLight:B.white,cursor:"pointer",marginBottom:6}}>
+                    <div style={{fontSize:12,fontWeight:600,color:on?B.teal:B.textMid}}>{on?"✓":"+"}  {t.name}</div>
+                    <div style={{fontSize:11,color:B.textLight}}>{fmtINR(t.costPerVanINR)}</div>
+                  </div>;
+                })}
+                {(pkg?.transfers||[]).length===0&&<div style={{fontSize:12,color:B.textLight,padding:8,textAlign:"center"}}>No transfers in this country's packages.</div>}
+              </div>
+
+              {/* Activities - pick per day */}
+              <div style={{marginBottom:6}}>
+                <SL>🎯 ACTIVITIES (assign to days)</SL>
+                <div style={{fontSize:11,color:B.textLight,marginBottom:8}}>Pick activities and assign to which day (1 = first day of this segment)</div>
+                {allActivities.length===0&&<div style={{fontSize:12,color:B.textLight,padding:8,textAlign:"center"}}>No activities in this country's packages.</div>}
+                {allActivities.map(act=>{
+                  const dayActivities = seg.dayActivities||Array.from({length:seg.nights||1},()=>[]);
+                  const assignedDay = dayActivities.findIndex(d=>d.some(a=>a.id===act.id));
+                  const isAssigned = assignedDay >= 0;
+                  const cost = act.costPerPaxINR||sp(act.costINR||0,act.markup||0,act.markupType||"percent");
+                  return(
+                    <div key={act.id} style={{background:isAssigned?B.tealXLight:B.offWhite,borderRadius:10,padding:"9px 11px",marginBottom:6,border:`1.5px solid ${isAssigned?B.teal:B.border}`}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:isAssigned?8:0}}>
+                        <div>
+                          <div style={{fontSize:12,fontWeight:600,color:isAssigned?B.teal:B.text}}>{act.name}</div>
+                          <div style={{fontSize:10,color:B.textLight}}>{fmtINR(cost)}/pax</div>
+                        </div>
+                        {isAssigned
+                          ? <DBtn onClick={()=>{
+                              const nd=dayActivities.map(d=>d.filter(a=>a.id!==act.id));
+                              updateSeg(seg.id,"dayActivities",nd);
+                            }}>Remove</DBtn>
+                          : <div style={{display:"flex",gap:4}}>
+                              {Array.from({length:seg.nights||1},(_,di)=>(
+                                <button key={di} onClick={()=>{
+                                  const nd=dayActivities.length>=(seg.nights||1)?[...dayActivities]:Array.from({length:seg.nights||1},(_,i)=>dayActivities[i]||[]);
+                                  nd[di]=[...(nd[di]||[]),{id:act.id,name:act.name,note:"",cost}];
+                                  updateSeg(seg.id,"dayActivities",nd);
+                                }} style={{background:B.teal,color:"#fff",border:"none",borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,cursor:"pointer"}}>
+                                  Day {di+1}
+                                </button>
+                              ))}
+                            </div>
+                        }
+                      </div>
+                      {isAssigned&&<div style={{fontSize:11,color:B.teal,fontWeight:600}}>→ Day {assignedDay+1} of {seg.countryName}</div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+
+            {/* Inter-country flight after this segment */}
+            {si < (trip.segments||[]).length-1&&(
+              <div style={{background:B.blueLight,border:`1.5px solid ${B.border}`,borderRadius:13,padding:"12px 14px",marginBottom:10}}>
+                <div style={{fontSize:11,color:B.blue,fontWeight:700,letterSpacing:1,marginBottom:8}}>✈️ FLIGHT: {seg.countryName} → {(trip.segments||[])[si+1]?.countryName}</div>
+                <div style={{display:"flex",gap:8}}>
+                  <input value={(trip.interFlights||[])[si]?.name||""} onChange={e=>updateFlight(si,"name",e.target.value)} placeholder="e.g. KUL → HKT, AirAsia" style={{flex:2,background:B.white,border:`1.5px solid ${B.border}`,borderRadius:9,color:B.text,padding:"9px 11px",fontSize:12,outline:"none",fontFamily:"'Poppins',sans-serif"}}/>
+                  <input type="number" value={(trip.interFlights||[])[si]?.cost||""} onChange={e=>updateFlight(si,"cost",e.target.value)} placeholder="₹ per pax" style={{flex:1,background:B.white,border:`1.5px solid ${B.border}`,borderRadius:9,color:B.text,padding:"9px 11px",fontSize:12,outline:"none",fontFamily:"'Poppins',sans-serif"}}/>
+                </div>
+                {(trip.interFlights||[])[si]?.cost>0&&<div style={{fontSize:11,color:B.blue,fontWeight:600,marginTop:6}}>Total: {fmtINR((trip.interFlights||[])[si].cost*((trip.pax?.adult||0)+(trip.pax?.child_5_11||0)+(trip.pax?.child_2_4||0)+(trip.pax?.infant||0)))}</div>}
+              </div>
+            )}
+          </div>);
+        })}
+
+        <MBtn onClick={addSegment} style={{width:"100%",marginBottom:10}}>+ Add Country Segment</MBtn>
+      </div>}
+
+      {tab==="pricing"&&<div>
+        <Card accent={B.teal}>
+          <SL>TRIP SUMMARY</SL>
+          <div style={{fontSize:15,fontWeight:800,color:B.teal,marginBottom:4}}>{trip.title||autoTitle()||"Custom Trip"}</div>
+          <div style={{fontSize:12,color:B.textLight,marginBottom:12}}>
+            {(trip.segments||[]).map(s=>s.countryName).join(" → ")} · {(trip.segments||[]).reduce((s,x)=>s+(x.nights||0),0)} nights
+          </div>
+          {(trip.segments||[]).map((seg,si)=>{
+            const pkg = data.packages.find(p=>p.countryId===seg.countryId);
+            const hotel = pkg?.hotels?.find(h=>h.id===seg.hotelId);
+            const hotelCost = hotel?sp(hotel.costPerNightINR,hotel.markup,hotel.markupType)*(seg.nights||1):0;
+            const adults=trip.pax?.adult||0, kids=(trip.pax?.child_5_11||0)+(trip.pax?.child_2_4||0);
+            const payingPax=adults+kids||1;
+            const transferCost=(seg.transfers||[]).reduce((s,tid)=>{const t=pkg?.transfers?.find(x=>x.id===tid);return s+(t?Math.ceil((t.costPerVanINR||0)/payingPax)*payingPax:0);},0);
+            const actCost=(seg.dayActivities||[]).flat().reduce((s,a)=>s+((a.cost||0)*(adults||1)),0);
+            return(
+              <div key={seg.id} style={{background:B.offWhite,borderRadius:10,padding:"10px",marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:700,color:B.orange,marginBottom:6}}>{seg.countryName} — {seg.nights}N</div>
+                {hotelCost>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span style={{color:B.textMid}}>🏨 {hotel?.name}</span><span style={{fontWeight:600}}>{fmtINR(hotelCost)}</span></div>}
+                {transferCost>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span style={{color:B.textMid}}>🚌 Transfers</span><span style={{fontWeight:600}}>{fmtINR(transferCost)}</span></div>}
+                {actCost>0&&<div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span style={{color:B.textMid}}>🎯 Activities</span><span style={{fontWeight:600}}>{fmtINR(actCost)}</span></div>}
+                {si<(trip.segments||[]).length-1&&(trip.interFlights||[])[si]?.cost>0&&(
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:4}}><span style={{color:B.blue}}>✈️ {(trip.interFlights||[])[si].name||"Inter-flight"}</span><span style={{fontWeight:600,color:B.blue}}>{fmtINR((trip.interFlights||[])[si].cost*payingPax)}</span></div>
+                )}
+              </div>
+            );
+          })}
+          <div style={{borderTop:`2px solid ${B.teal}22`,paddingTop:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <span style={{fontSize:14,fontWeight:800,color:B.teal}}>GRAND TOTAL (incl. GST+TCS)</span>
+            <span style={{fontSize:18,fontWeight:800,color:B.teal}}>{fmtINR(total)}</span>
+          </div>
+        </Card>
+      </div>}
+
+      <div style={{marginTop:10}}>
+        <PBtn onClick={()=>{
+          const finalTrip={...trip,title:trip.title||autoTitle(),total};
+          onSave(finalTrip);
+        }}>💾 Save Trip</PBtn>
+        {tab==="pricing"&&(trip.segments||[]).length>0&&<SBtn onClick={()=>{
+          const finalTrip={...trip,title:trip.title||autoTitle(),total};
+          onSave(finalTrip);
+          setScreen("itinerary");
+        }} style={{width:"100%",marginTop:8}}>📲 Save + View Itinerary</SBtn>}
+      </div>
+    </Shell>
+  );
+}
+
+function CustomItineraryView({trip, days, onBack, onEdit, data}) {
+  const [openDay, setOpenDay] = useState(0);
+  const cardRefs = useRef({});
+  const [lightbox, setLightbox] = useState(null);
+  const totalNights = (trip.segments||[]).reduce((s,x)=>s+(x.nights||0),0);
+  const totalPax = PAX_KEYS.reduce((s,k)=>s+(trip.pax?.[k]||0),0);
+  const segNames = (trip.segments||[]).map(s=>{
+    const names={th:"HKT",my:"KUL",id:"DPS",sg:"SIN"};
+    return names[s.countryId]||s.countryId?.toUpperCase()||"?";
+  }).join(" + ");
+
+  function handleToggle(idx) {
+    const ref = cardRefs.current[idx];
+    const nextOpen = openDay===idx ? -1 : idx;
+    if(ref && nextOpen!==-1){
+      const top = ref.getBoundingClientRect().top + window.scrollY - 60;
+      setOpenDay(nextOpen);
+      setTimeout(()=>window.scrollTo({top,behavior:"smooth"}),50);
+    } else setOpenDay(nextOpen);
+  }
+
+  function shareWA() {
+    let msg = `✈️ *${trip.clientName?""+trip.clientName+"'s ":""}${trip.title||segNames} — Kairali Trails*\n`;
+    msg += `${totalNights+1}D / ${totalNights}N · ${segNames}\n`;
+    if(trip.arrivalDate) msg += `📅 ${formatDate(trip.arrivalDate)}\n`;
+    msg += `👥 ${totalPax} Traveller${totalPax!==1?"s":""} · 💰 ${fmtINR(trip.total||0)}\n\n━━━━━━━━━━━━━━\n`;
+    days.forEach(d=>{
+      msg += `*Day ${d.day}* ${d.emoji} ${d.title} — ${d.date}\n`;
+      (d.bulletNotes||[]).forEach(n=>{msg+=`• ${n}\n`;});
+      if(d.stay) msg+=`🏨 ${d.stay.name}\n`;
+      msg+="\n";
+    });
+    msg += `━━━━━━━━━━━━━━\n💰 Total: ${fmtINR(trip.total||0)}\n📞 Kairali Trails | +91 800 800 4016`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`,"_blank");
+  }
+
+  // Get hero photos from first segment hotel
+  const firstSeg = (trip.segments||[])[0];
+  const firstPkg = data.packages.find(p=>p.countryId===firstSeg?.countryId);
+  const firstHotel = firstPkg?.hotels?.find(h=>h.id===firstSeg?.hotelId);
+  const heroPhotos = firstHotel?.photos?.length>0 ? firstHotel.photos : (COUNTRY_PHOTOS[firstSeg?.countryId]||HERO_PHOTOS);
+  const [imgIdx, setImgIdx] = useState(0);
+  useEffect(()=>{const t=setInterval(()=>setImgIdx(i=>(i+1)%heroPhotos.length),4000);return()=>clearInterval(t);},[heroPhotos.length]);
+
+  return(
+    <div className="it-page" style={{minHeight:"100vh",paddingBottom:80,maxWidth:480,margin:"0 auto",fontFamily:"'Inter',sans-serif"}}>
+      <style>{itCSS}</style>
+      {lightbox&&<HotelLightbox photos={lightbox.photos} startIndex={lightbox.idx} onClose={()=>setLightbox(null)}/>}
+
+      {/* HERO */}
+      <div style={{position:"relative",height:240,overflow:"hidden",background:"#0a2a3a"}}>
+        {heroPhotos.map((src,i)=><img key={i} src={src} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:i===imgIdx?1:0,transition:"opacity 1s ease"}}/>)}
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom,rgba(0,0,0,0.2),rgba(0,0,0,0.7))"}}/>
+        <div style={{position:"absolute",top:0,left:0,right:0,zIndex:3,display:"flex",justifyContent:"space-between",padding:"14px 16px"}}>
+          <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.18)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>Back
+          </button>
+          <button onClick={onEdit} style={{background:"rgba(255,255,255,0.18)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",padding:"7px 14px",borderRadius:20,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>✏️ Edit</button>
+        </div>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,zIndex:2,padding:"0 16px 18px"}}>
+          <div style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginBottom:4,fontFamily:"'Inter',sans-serif",letterSpacing:1}}>PRIVATE CUSTOMISATION</div>
+          <div style={{fontSize:22,fontWeight:400,color:"#fff",fontFamily:"'Playfair Display',serif",fontStyle:"italic",lineHeight:1.3}}>
+            {trip.clientName?`${trip.clientName}'s `:""}
+          </div>
+          <div style={{fontSize:18,fontWeight:800,color:"#fff",fontFamily:"'Inter',sans-serif"}}>{segNames}</div>
+          <div style={{fontSize:13,color:"rgba(255,255,255,0.85)",marginTop:4,fontFamily:"'Inter',sans-serif"}}>
+            {totalNights+1}D / {totalNights}N · {totalPax} Traveller{totalPax!==1?"s":""}
+          </div>
+        </div>
+      </div>
+
+      {/* Segment badges */}
+      <div style={{display:"flex",gap:8,padding:"10px 12px",overflowX:"auto",background:IT.card,borderBottom:`1px solid ${IT.border}`}}>
+        {(trip.segments||[]).map((seg,si)=>(
+          <div key={seg.id} style={{flexShrink:0,background:IT.accentLight,borderRadius:8,padding:"6px 12px",textAlign:"center"}}>
+            <div style={{fontSize:10,color:IT.teal,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>{seg.countryName?.toUpperCase()}</div>
+            <div style={{fontSize:12,fontWeight:700,color:IT.ink,fontFamily:"'Inter',sans-serif"}}>{seg.nights}N · {seg.hotelName||"Hotel"}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ITINERARY DAYS */}
+      <div style={{padding:"8px 10px 0"}}>
+        {days.map((d,idx)=>(
+          <ItinDayCard key={d.id||idx} d={d} isOpen={openDay===idx} onToggle={()=>handleToggle(idx)}
+            cardRef={el=>cardRefs.current[idx]=el}
+            onOpenLightbox={(photos,startIdx)=>setLightbox({photos,idx:startIdx})}/>
+        ))}
+      </div>
+
+      {/* Fare Breakup */}
+      <div style={{margin:"6px 10px 0",background:IT.card,borderRadius:12,padding:"12px",border:`1px solid ${IT.border}`}}>
+        <div style={{fontSize:14,fontWeight:700,color:IT.ink,marginBottom:10,fontFamily:"'Inter',sans-serif"}}>💰 Fare Breakup</div>
+        <div style={{background:IT.accentLight,borderRadius:8,padding:"8px 10px",marginBottom:8}}>
+          <div style={{fontSize:13,fontWeight:700,color:IT.teal,fontFamily:"'Inter',sans-serif"}}>{trip.title||segNames}</div>
+          <div style={{fontSize:11,color:IT.muted,fontFamily:"'Inter',sans-serif"}}>{segNames} · {totalNights+1}D / {totalNights}N</div>
+        </div>
+        {PAX_KEYS.filter(k=>(trip.pax?.[k]||0)>0).map(k=>(
+          <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${IT.border}`,fontFamily:"'Inter',sans-serif"}}>
+            <span style={{fontSize:12,color:IT.sub}}>{PAX_LABELS[k]}</span>
+            <span style={{fontSize:12,color:IT.muted}}>{trip.pax[k]} pax</span>
+          </div>
+        ))}
+        {(trip.segments||[]).map((seg,si)=>{
+          const pkg=data.packages.find(p=>p.countryId===seg.countryId);
+          const hotel=pkg?.hotels?.find(h=>h.id===seg.hotelId);
+          const hotelCost=hotel?sp(hotel.costPerNightINR,hotel.markup,hotel.markupType)*(seg.nights||1):0;
+          return hotelCost>0?(
+            <div key={seg.id} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${IT.border}`,fontFamily:"'Inter',sans-serif"}}>
+              <span style={{fontSize:12,color:IT.sub}}>🏨 {seg.countryName} — {hotel?.name}</span>
+              <span style={{fontSize:12,fontWeight:600,color:IT.ink}}>{fmtINR(hotelCost)}</span>
+            </div>
+          ):null;
+        })}
+        {(trip.interFlights||[]).map((f,fi)=>f?.cost>0?(
+          <div key={fi} style={{display:"flex",justifyContent:"space-between",padding:"5px 0",borderBottom:`1px solid ${IT.border}`,fontFamily:"'Inter',sans-serif"}}>
+            <span style={{fontSize:12,color:IT.sub}}>✈️ {f.name||"Inter-flight"}</span>
+            <span style={{fontSize:12,fontWeight:600,color:IT.blue}}>{fmtINR(f.cost*totalPax)}</span>
+          </div>
+        ):null)}
+        <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 0",fontFamily:"'Inter',sans-serif"}}>
+          <span style={{fontSize:15,fontWeight:800,color:IT.ink}}>Grand Total</span>
+          <span style={{fontSize:15,fontWeight:800,color:IT.teal}}>{fmtINR(trip.total||0)}</span>
+        </div>
+        {totalPax>0&&<div style={{textAlign:"center",fontSize:11,color:IT.muted,marginTop:4,fontFamily:"'Inter',sans-serif"}}>{fmtINR(Math.round((trip.total||0)/totalPax))} per person · incl. GST + TCS</div>}
+      </div>
+      <div style={{height:16}}/>
+
+      {/* STICKY FOOTER */}
+      <div style={{position:"fixed",bottom:0,left:0,right:0,zIndex:50,background:"#fff",borderTop:`1px solid ${IT.border}`,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",maxWidth:480,margin:"0 auto",fontFamily:"'Inter',sans-serif"}}>
+        <div>
+          <div style={{fontSize:10,color:IT.muted,fontWeight:500,textTransform:"uppercase",letterSpacing:1}}>Total</div>
+          <div style={{fontSize:18,fontWeight:800,color:IT.ink}}>{fmtINR(trip.total||0)}</div>
+        </div>
+        <button onClick={shareWA} style={{background:"#25D366",color:"#fff",border:"none",borderRadius:10,padding:"10px 16px",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",gap:8,fontFamily:"'Inter',sans-serif"}}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Send via WhatsApp
+        </button>
       </div>
     </div>
   );
